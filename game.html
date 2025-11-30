@@ -473,11 +473,15 @@
         class AudioManager {
             constructor() {
                 this.audioContext = null;
+                this.masterGain = null;
             }
 
             ensureAudioContext() {
                 if (!this.audioContext) {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.audioContext.createGain();
+                    this.masterGain.gain.value = 0.5; // 50% volume
+                    this.masterGain.connect(this.audioContext.destination);
                 }
                 if (this.audioContext.state === "suspended") {
                     this.audioContext.resume();
@@ -488,40 +492,44 @@
                 this.ensureAudioContext();
             }
 
-            playSound(frequency, duration, volume = 0.3, type = "sine") {
+            playSound(frequency, duration, volume = 0.5, type = "sine") {
                 this.ensureAudioContext();
                 if (!this.audioContext) return;
 
-                const now = this.audioContext.currentTime;
-                const osc = this.audioContext.createOscillator();
-                const gain = this.audioContext.createGain();
+                try {
+                    const now = this.audioContext.currentTime;
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
 
-                osc.connect(gain);
-                gain.connect(this.audioContext.destination);
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
 
-                osc.type = type;
-                osc.frequency.setValueAtTime(frequency, now);
-                gain.gain.setValueAtTime(volume, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(frequency, now);
+                    gain.gain.setValueAtTime(volume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
 
-                osc.start(now);
-                osc.stop(now + duration);
+                    osc.start(now);
+                    osc.stop(now + duration);
+                } catch (e) {
+                    console.error("Audio error:", e);
+                }
             }
 
             playCollisionSound() {
-                this.playSound(200, 0.1, 0.4, "square");
-                setTimeout(() => this.playSound(150, 0.1, 0.3, "square"), 50);
+                this.playSound(200, 0.15, 0.7, "square");
+                setTimeout(() => this.playSound(150, 0.15, 0.6, "square"), 75);
             }
 
             playLevelPassSound() {
-                this.playSound(523, 0.1, 0.3, "sine");
-                setTimeout(() => this.playSound(659, 0.1, 0.3, "sine"), 120);
-                setTimeout(() => this.playSound(784, 0.1, 0.3, "sine"), 240);
-                setTimeout(() => this.playSound(1047, 0.2, 0.3, "sine"), 360);
+                this.playSound(523, 0.15, 0.6, "sine");
+                setTimeout(() => this.playSound(659, 0.15, 0.6, "sine"), 150);
+                setTimeout(() => this.playSound(784, 0.15, 0.6, "sine"), 300);
+                setTimeout(() => this.playSound(1047, 0.25, 0.6, "sine"), 450);
             }
 
             playFireworksSound() {
-                this.playSound(800, 0.05, 0.25, "square");
+                this.playSound(800, 0.08, 0.5, "square");
             }
         }
 
@@ -1159,5 +1167,10 @@
         window.game = game;
         console.log("✅ Game initialized successfully!");
     </script>
+
+    <!-- Audio element for background music - Using inline data (can be replaced with web audio) -->
+    <audio id="background-music" loop preload="auto" style="display:none;">
+        <!-- Will be controlled by JavaScript -->
+    </audio>
 </body>
 </html>
