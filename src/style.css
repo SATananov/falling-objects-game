@@ -52,7 +52,8 @@ body {
   margin-top: 8px;
   width: 100%;
   max-width: 800px;
-  height: auto;
+  height: 500px;
+  aspect-ratio: 800 / 500;
   touch-action: none; /* disable scroll on touch drag */
   cursor: pointer;
 }
