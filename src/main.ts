@@ -1163,7 +1163,11 @@ function showError(msg: string) {
   console.error(msg);
   if (errorDisplay) {
     errorDisplay.style.display = "block";
-    errorDisplay.textContent += msg + "\n";
+    const timestamp = new Date().toLocaleTimeString();
+    const line = document.createElement("div");
+    line.textContent = `[${timestamp}] ${msg}`;
+    errorDisplay.appendChild(line);
+    errorDisplay.scrollTop = errorDisplay.scrollHeight;
   }
 }
 
@@ -1173,6 +1177,7 @@ try {
     throw new Error("Canvas element not found!");
   }
   
+  console.log("📦 Creating Game object...");
   const game = new Game(canvas);
 
   console.log("✅ Game initialized successfully!");
@@ -1192,19 +1197,27 @@ try {
   };
 
   // Auto-start the game after 2 seconds
-  console.log("Will auto-start game in 2 seconds...");
+  console.log("⏱️ Will auto-start game in 2 seconds...");
   const startTimer = setTimeout(() => {
     try {
       console.log("🎮 Auto-starting game NOW");
       game.start();
+      console.log("✅ Game started successfully!");
     } catch (error) {
       showError("Auto-start error: " + String(error));
+      if (error instanceof Error) {
+        showError("Stack: " + error.stack);
+      }
     }
   }, 2000);
 
   // @ts-ignore
   (window as any).cancelAutoStart = () => clearTimeout(startTimer);
+  console.log("🎮 GAME READY TO PLAY! (auto-start in 2 seconds)");
 } catch (error) {
-  const errorMsg = error instanceof Error ? error.message + "\n" + error.stack : String(error);
-  showError("FATAL: " + errorMsg);
+  const errorMsg = error instanceof Error ? error.message : String(error);
+  showError("FATAL ERROR: " + errorMsg);
+  if (error instanceof Error && error.stack) {
+    showError("Stack: " + error.stack);
+  }
 }
