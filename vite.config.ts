@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  base: "/",
+  base: "/falling-objects-game/",
   plugins: [],
   server: {
     middlewareMode: false,
