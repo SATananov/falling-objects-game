@@ -182,6 +182,7 @@
             ctx.fillText("Score: " + score, 20, 30);
             ctx.fillText("Level: " + level, 20, 60);
             ctx.fillText("Objects: " + objects.length, 20, 90);
+            ctx.fillText("Status: " + (gameRunning ? "🔴 RUNNING" : "⚫ PAUSED"), canvas.width - 220, 30);
 
             // Draw start message if not running
             if (!gameRunning) {
@@ -259,9 +260,10 @@
 
         // Global functions
         window.gameStart = function() {
-            console.log("🎮 Starting game...");
+            console.log("🎮 Starting game...", { gameRunning, score, level, objectCount: objects.length });
             gameRunning = true;
             lastTime = Date.now();
+            console.log("✅ Game started! gameRunning =", gameRunning);
         };
 
         window.gameStop = function() {
@@ -271,6 +273,7 @@
             level = 1;
             objects = [];
             spawnCounter = 0;
+            console.log("✅ Game stopped!");
         };
 
         // Start game loop
