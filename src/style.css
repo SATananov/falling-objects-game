@@ -28,6 +28,7 @@ body {
   border-radius: 8px;
   border: 1px solid #d0d0ff;
   padding: 10px 10px 16px;
+  position: relative;
 }
 
 #game-canvas {
@@ -41,7 +42,6 @@ body {
   height: auto;
   touch-action: none; /* disable scroll on touch drag */
   cursor: pointer;
-  position: relative;
 }
 
 .game-over-overlay {
