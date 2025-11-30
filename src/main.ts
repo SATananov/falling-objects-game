@@ -708,6 +708,7 @@ class Game {
   private levelPassedOverlay = document.getElementById("level-passed-overlay") as HTMLDivElement;
   private levelPassedText = document.getElementById("level-passed-text") as HTMLDivElement;
   private nextLevelBtn = document.getElementById("btn-next-level") as HTMLButtonElement;
+  private welcomeOverlay = document.getElementById("welcome-overlay") as HTMLDivElement;
 
   constructor(canvas: HTMLCanvasElement) {
     const context = canvas.getContext("2d");
@@ -791,6 +792,7 @@ class Game {
 
     this.gameOverOverlay.classList.add("hidden");
     this.levelPassedOverlay.classList.add("hidden");
+    this.welcomeOverlay.classList.add("hidden");
     
     // Play background music
     if (this.backgroundMusic) {
@@ -1096,8 +1098,10 @@ class Game {
     const btnPause = document.getElementById("btn-pause") as HTMLButtonElement;
     const btnResume = document.getElementById("btn-resume") as HTMLButtonElement;
     const btnStop = document.getElementById("btn-stop") as HTMLButtonElement;
+    const btnStartWelcome = document.getElementById("btn-start-welcome") as HTMLButtonElement;
 
     btnStart.addEventListener("click", () => this.start());
+    btnStartWelcome.addEventListener("click", () => this.start());
     btnPause.addEventListener("click", () => this.pause());
     btnResume.addEventListener("click", () => this.resume());
     btnStop.addEventListener("click", () => this.stop());

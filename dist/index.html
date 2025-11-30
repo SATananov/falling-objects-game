@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <title>Falling Objects Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script type="module" crossorigin src="/falling-objects-game/assets/index-BlvHhLGk.js"></script>
-    <link rel="stylesheet" crossorigin href="/falling-objects-game/assets/index-DbNwyRD9.css">
+    <script type="module" crossorigin src="/falling-objects-game/assets/index-D6Z6bp_T.js"></script>
+    <link rel="stylesheet" crossorigin href="/falling-objects-game/assets/index-DNDk9yEm.css">
   </head>
   <body>
     <div class="dedication">FOR DESSI and EVA</div>
@@ -31,6 +31,17 @@
             <div class="level-passed-message"><span id="level-passed-text">You Pass Level 1</span></div>
             <div class="level-passed-hint">Next level in 5 seconds...</div>
             <button id="btn-next-level" class="next-level-btn">Go To Next Level</button>
+          </div>
+        </div>
+        <div id="welcome-overlay" class="welcome-overlay">
+          <div class="welcome-container">
+            <div class="welcome-title">🎮 FALLING OBJECTS GAME</div>
+            <div class="welcome-subtitle">Catch the falling objects!</div>
+            <div class="welcome-controls">
+              <p>Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move</p>
+              <p>Or <strong>Click & Drag</strong> to control the player</p>
+            </div>
+            <button id="btn-start-welcome" class="start-welcome-btn">🚀 START GAME</button>
           </div>
         </div>
         <canvas id="game-canvas" width="800" height="500"></canvas>
