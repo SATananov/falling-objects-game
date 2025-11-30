@@ -681,7 +681,7 @@ class Game {
   private lastFrameTime = 0;
   private nextLevelObjectIndex = 0;
 
-  private status: GameStatus = "IDLE";
+  public status: GameStatus = "IDLE";
   private animationFrameId = 0;
 
   private leftPressed = false;
@@ -1165,3 +1165,12 @@ console.log("Game object:", game);
 
 // @ts-ignore
 (window as any).game = game;
+
+// Auto-start the game after a short delay to allow audio context initialization
+setTimeout(() => {
+  // Only auto-start if not already started
+  if (game.status === "IDLE") {
+    console.log("Auto-starting game after user interaction delay...");
+    game.start();
+  }
+}, 2000);
