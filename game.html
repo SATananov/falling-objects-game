@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Falling Objects Game - FOR DESSI and EVA</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f0f2ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dedication {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4c5bff;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 8px rgba(76, 91, 255, 0.3);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .app {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 20px 24px 28px;
+            max-width: 900px;
+            width: 100%;
+            flex: 1;
+        }
+
+        .game-panel {
+            border-radius: 8px;
+            border: 1px solid #d0d0ff;
+            padding: 10px 10px 16px;
+            position: relative;
+        }
+
+        #game-canvas {
+            display: block;
+            background: #11152a;
+            border-radius: 8px;
+            border: 2px solid #d0d0ff;
+            margin-top: 8px;
+            width: 100%;
+            max-width: 800px;
+            height: 500px;
+            aspect-ratio: 800 / 500;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .game-over-overlay.hidden {
+            display: none;
+        }
+
+        .game-over-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .game-over-message {
+            font-size: 72px;
+            font-weight: bold;
+            color: #ff4444;
+            text-shadow: 0 0 20px rgba(255, 68, 68, 0.6), 0 0 40px rgba(255, 68, 68, 0.3);
+            animation: gameOverPulse 0.6s ease-in-out;
+        }
+
+        .play-again-btn {
+            padding: 12px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff6b6b, #ff8888);
+            color: white;
+            border: 2px solid #ff4444;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+        }
+
+        .play-again-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 68, 68, 0.6);
+        }
+
+        @keyframes gameOverPulse {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .level-passed-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .level-passed-overlay.hidden {
+            display: none;
+        }
+
+        .level-passed-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .level-passed-message {
+            font-size: 56px;
+            font-weight: bold;
+            color: #44ff44;
+            text-shadow: 0 0 20px rgba(68, 255, 68, 0.6), 0 0 40px rgba(68, 255, 68, 0.3);
+            animation: levelPassedPulse 0.6s ease-in-out;
+        }
+
+        .level-passed-hint {
+            font-size: 20px;
+            color: #ffffff;
+            font-weight: 500;
+            animation: fadeInUp 0.8s ease-in-out 0.3s both;
+        }
+
+        .next-level-btn {
+            padding: 12px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #44ff44, #66ff66);
+            color: #000;
+            border: 2px solid #44ff44;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(68, 255, 68, 0.4);
+            animation: fadeInUp 0.8s ease-in-out 0.6s both;
+        }
+
+        .next-level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(68, 255, 68, 0.6);
+        }
+
+        @keyframes levelPassedPulse {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .welcome-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(76, 91, 255, 0.2));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .welcome-overlay.hidden {
+            display: none;
+        }
+
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            text-align: center;
+        }
+
+        .welcome-title {
+            font-size: 52px;
+            font-weight: bold;
+            color: #44ff44;
+            text-shadow: 0 0 30px rgba(68, 255, 68, 0.7), 0 0 60px rgba(68, 255, 68, 0.4);
+            animation: titleBounce 2s ease-in-out infinite;
+            letter-spacing: 2px;
+        }
+
+        .welcome-subtitle {
+            font-size: 28px;
+            color: #ff9f80;
+            text-shadow: 0 0 15px rgba(255, 159, 128, 0.5);
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .welcome-controls {
+            font-size: 16px;
+            color: #ffffff;
+            animation: fadeInUp 0.8s ease-out 0.5s both;
+            line-height: 1.8;
+        }
+
+        .welcome-controls p {
+            margin: 8px 0;
+        }
+
+        .start-welcome-btn {
+            padding: 16px 48px;
+            font-size: 22px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #28a745, #3dd555);
+            color: #ffffff;
+            border: 3px solid #44ff44;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(40, 167, 69, 0.8);
+            animation: fadeInUp 0.8s ease-out 0.7s both, buttonPulse 1.5s ease-in-out infinite 1s;
+        }
+
+        .start-welcome-btn:hover {
+            transform: translateY(-4px) scale(1.08);
+            box-shadow: 0 0 50px rgba(40, 167, 69, 1), 0 0 70px rgba(68, 255, 68, 0.5);
+        }
+
+        @keyframes titleBounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(40, 167, 69, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(40, 167, 69, 1), 0 0 70px rgba(68, 255, 68, 0.6);
+            }
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hud {
+            color: #f7f7ff;
+            font-size: 13px;
+            padding: 4px 6px;
+            background: #161a30;
+            border-radius: 6px;
+        }
+
+        .hud > div {
+            margin-bottom: 2px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #2d314b;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+
+        #progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #45c445;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .controls button {
+            padding: 8px 18px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            background: #4c5bff;
+            color: #ffffff;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+        }
+
+        .controls button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+        }
+
+        #btn-start {
+            background: linear-gradient(135deg, #28a745, #3dd555);
+            font-size: 16px;
+            padding: 12px 32px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+            animation: glowPulse 1s ease-in-out infinite;
+        }
+
+        #btn-stop {
+            background: #dc3545;
+        }
+
+        #btn-pause {
+            background: #ffc107;
+            color: #1c1c1c;
+        }
+
+        #btn-resume {
+            background: #17a2b8;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                box-shadow: 0 0 15px rgba(40, 167, 69, 0.8), 0 0 30px rgba(40, 167, 69, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(40, 167, 69, 1), 0 0 40px rgba(40, 167, 69, 0.6);
+            }
+        }
+
+        .hint {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="dedication">FOR DESSI and EVA</div>
+    <div class="app">
+        <div class="game-panel">
+            <div class="hud">
+                <div id="status">Status: IDLE</div>
+                <div id="objects">Objects: 0</div>
+                <div id="time">Time: 0.00s / 0.00s</div>
+                <div class="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+            </div>
+
+            <div id="game-over-overlay" class="game-over-overlay hidden">
+                <div class="game-over-container">
+                    <div class="game-over-message">GAME OVER</div>
+                    <button id="btn-play-again" class="play-again-btn">Play Again</button>
+                </div>
+            </div>
+
+            <div id="level-passed-overlay" class="level-passed-overlay hidden">
+                <div class="level-passed-container">
+                    <div class="level-passed-message"><span id="level-passed-text">You Pass Level 1</span></div>
+                    <div class="level-passed-hint">Next level in 5 seconds...</div>
+                    <button id="btn-next-level" class="next-level-btn">Go To Next Level</button>
+                </div>
+            </div>
+
+            <div id="welcome-overlay" class="welcome-overlay">
+                <div class="welcome-container">
+                    <div class="welcome-title">🎮 FALLING OBJECTS GAME</div>
+                    <div class="welcome-subtitle">Catch the falling objects!</div>
+                    <div class="welcome-controls">
+                        <p>Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move</p>
+                        <p>Or <strong>Click & Drag</strong> to control the player</p>
+                    </div>
+                    <button id="btn-start-welcome" class="start-welcome-btn">🚀 START GAME</button>
+                </div>
+            </div>
+
+            <canvas id="game-canvas" width="800" height="500"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="btn-start">Start</button>
+            <button id="btn-pause">Pause</button>
+            <button id="btn-resume">Resume</button>
+            <button id="btn-stop">Stop</button>
+        </div>
+
+        <p class="hint">Made By S.A.T. - Tanashi/Stefano De Tanini Brand.</p>
+    </div>
+
+    <script>
+        // ========== GAME CODE ==========
+        
+        // Utility functions
+        function boundsIntersect(a, b) {
+            return (
+                a.x < b.x + b.width &&
+                a.x + a.width > b.x &&
+                a.y < b.y + b.height &&
+                a.y + a.height > b.y
+            );
+        }
+
+        function randomBetween(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function randomChoice(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // Audio Manager
+        class AudioManager {
+            constructor() {
+                this.audioContext = null;
+            }
+
+            ensureAudioContext() {
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.audioContext.state === "suspended") {
+                    this.audioContext.resume();
+                }
+            }
+
+            initAudio() {
+                this.ensureAudioContext();
+            }
+
+            playSound(frequency, duration, volume = 0.3, type = "sine") {
+                this.ensureAudioContext();
+                if (!this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+                const osc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+
+                osc.connect(gain);
+                gain.connect(this.audioContext.destination);
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, now);
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+                osc.start(now);
+                osc.stop(now + duration);
+            }
+
+            playCollisionSound() {
+                this.playSound(200, 0.1, 0.4, "square");
+                setTimeout(() => this.playSound(150, 0.1, 0.3, "square"), 50);
+            }
+
+            playLevelPassSound() {
+                this.playSound(523, 0.1, 0.3, "sine");
+                setTimeout(() => this.playSound(659, 0.1, 0.3, "sine"), 120);
+                setTimeout(() => this.playSound(784, 0.1, 0.3, "sine"), 240);
+                setTimeout(() => this.playSound(1047, 0.2, 0.3, "sine"), 360);
+            }
+
+            playFireworksSound() {
+                this.playSound(800, 0.05, 0.25, "square");
+            }
+        }
+
+        // Fireworks
+        class Fireworks {
+            constructor() {
+                this.particles = [];
+            }
+
+            createExplosion(x, y, count = 50) {
+                const colors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ffffff"];
+                
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 * i) / count;
+                    const speed = randomBetween(150, 350);
+                    const vx = Math.cos(angle) * speed;
+                    const vy = Math.sin(angle) * speed;
+                    
+                    this.particles.push({
+                        x,
+                        y,
+                        vx,
+                        vy,
+                        life: 1,
+                        maxLife: randomBetween(0.8, 1.5),
+                        color: randomChoice(colors),
+                    });
+                }
+            }
+
+            update(deltaSeconds) {
+                this.particles.forEach((p) => {
+                    p.x += p.vx * deltaSeconds;
+                    p.y += p.vy * deltaSeconds;
+                    p.vy += 300 * deltaSeconds;
+                    p.life -= deltaSeconds;
+                });
+
+                this.particles = this.particles.filter((p) => p.life > 0);
+            }
+
+            render(ctx) {
+                this.particles.forEach((p) => {
+                    const alpha = Math.max(0, p.life / p.maxLife);
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+            }
+
+            hasParticles() {
+                return this.particles.length > 0;
+            }
+        }
+
+        // Game Objects
+        class Player {
+            constructor(location, width, height, color, borderColor) {
+                this.location = location;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+                this.borderColor = borderColor;
+                this.isAlive = true;
+                this.moveSpeed = 420;
+            }
+
+            moveLeft(deltaSeconds) { this.location.x -= this.moveSpeed * deltaSeconds; }
+            moveRight(deltaSeconds) { this.location.x += this.moveSpeed * deltaSeconds; }
+            moveUp(deltaSeconds) { this.location.y -= this.moveSpeed * deltaSeconds; }
+            moveDown(deltaSeconds) { this.location.y += this.moveSpeed * deltaSeconds; }
+
+            move(deltaSeconds, field) {
+                if (this.location.x < this.width / 2) this.location.x = this.width / 2;
+                if (this.location.x > field.width - this.width / 2) this.location.x = field.width - this.width / 2;
+                if (this.location.y < this.height / 2) this.location.y = this.height / 2;
+                if (this.location.y > field.height - this.height / 2) this.location.y = field.height - this.height / 2;
+            }
+
+            getBounds() {
+                return {
+                    x: this.location.x - this.width / 2,
+                    y: this.location.y - this.height / 2,
+                    width: this.width,
+                    height: this.height,
+                };
+            }
+
+            hasCollision(other) {
+                return boundsIntersect(this.getBounds(), other.getBounds());
+            }
+
+            render(ctx) {
+                const bounds = this.getBounds();
+                ctx.save();
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = this.borderColor;
+                ctx.lineWidth = 2;
+                ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                ctx.restore();
+            }
+        }
+
+        class FallingCircle {
+            constructor(location, speedY, radius, color, borderColor) {
+                this.location = location;
+                this.speed = { x: 0, y: speedY };
+                this.radius = radius;
+                this.color = color;
+                this.borderColor = borderColor;
+                this.isAlive = true;
+            }
+
+            move(deltaSeconds, field) {
+                this.location.y += this.speed.y * deltaSeconds;
+                if (this.location.y - 100 > field.height) this.isAlive = false;
+            }
+
+            getBounds() {
+                return {
+                    x: this.location.x - this.radius,
+                    y: this.location.y - this.radius,
+                    width: this.radius * 2,
+                    height: this.radius * 2,
+                };
+            }
+
+            hasCollision(other) {
+                return boundsIntersect(this.getBounds(), other.getBounds());
+            }
+
+            render(ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.location.x, this.location.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = this.borderColor;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class RotatingSquare {
+            constructor(location, speedY, size, color, borderColor, angularSpeed) {
+                this.location = location;
+                this.speed = { x: 0, y: speedY };
+                this.size = size;
+                this.color = color;
+                this.borderColor = borderColor;
+                this.angle = 0;
+                this.angularSpeed = angularSpeed;
+                this.isAlive = true;
+            }
+
+            move(deltaSeconds, field) {
+                this.location.y += this.speed.y * deltaSeconds;
+                this.angle += this.angularSpeed * deltaSeconds;
+                if (this.location.y - 100 > field.height) this.isAlive = false;
+            }
+
+            getBounds() {
+                return {
+                    x: this.location.x - this.size / 2,
+                    y: this.location.y - this.size / 2,
+                    width: this.size,
+                    height: this.size,
+                };
+            }
+
+            hasCollision(other) {
+                return boundsIntersect(this.getBounds(), other.getBounds());
+            }
+
+            render(ctx) {
+                ctx.save();
+                ctx.translate(this.location.x, this.location.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = this.borderColor;
+                ctx.lineWidth = 2;
+                const half = this.size / 2;
+                ctx.fillRect(-half, -half, this.size, this.size);
+                ctx.strokeRect(-half, -half, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        class FallingEmoji {
+            constructor(location, speedY, fontSize, text) {
+                this.location = location;
+                this.speed = { x: 0, y: speedY };
+                this.text = text;
+                this.fontSize = fontSize;
+                this.isAlive = true;
+            }
+
+            move(deltaSeconds, field) {
+                this.location.y += this.speed.y * deltaSeconds;
+                if (this.location.y - 100 > field.height) this.isAlive = false;
+            }
+
+            getBounds() {
+                const size = this.fontSize;
+                return {
+                    x: this.location.x - size / 2,
+                    y: this.location.y - size / 2,
+                    width: size,
+                    height: size,
+                };
+            }
+
+            hasCollision(other) {
+                return boundsIntersect(this.getBounds(), other.getBounds());
+            }
+
+            render(ctx) {
+                ctx.save();
+                ctx.font = `${this.fontSize}px system-ui`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.text, this.location.x, this.location.y);
+                ctx.restore();
+            }
+        }
+
+        class GameField {
+            constructor(width, height) {
+                this.width = width;
+                this.height = height;
+                this.gameObjects = [];
+            }
+
+            addObject(obj) {
+                this.gameObjects.push(obj);
+            }
+
+            removeDead() {
+                this.gameObjects = this.gameObjects.filter((o) => o.isAlive);
+            }
+        }
+
+        // Level Generator
+        function generateLevel(durationMs, difficulty, field, theme, kind) {
+            const levelObjects = [];
+            const animalEmojis = ["🐶", "🐱", "🦊", "🐻", "🐰", "🦁", "🐼"];
+            const toolEmojis = ["🔧", "🛠", "⚙", "🔩", "🪚", "🔨", "🪛"];
+
+            const objectsCount = Math.floor(durationMs / 1000 * difficulty * 1.5);
+
+            for (let i = 0; i < objectsCount; i++) {
+                const startTime = randomBetween(0, durationMs - 500);
+                const x = randomBetween(40, field.width - 40);
+                const startY = randomBetween(-200, -40);
+                const minSpeed = 80 + difficulty * 30;
+                const maxSpeed = 190 + difficulty * 60;
+                const speed = randomBetween(minSpeed, maxSpeed);
+                const size = randomBetween(28, 48);
+                const radius = size / 2;
+
+                const factory = () => {
+                    if (kind === "shapes") {
+                        const type = randomChoice(["circle", "square"]);
+                        const color = randomChoice(["#ff9f80", "#ffdf6e", "#85e3ff", "#baffc9"]);
+                        const borderColor = "#ffffff";
+                        const angularSpeed = randomBetween(-2.5, 2.5);
+
+                        if (type === "circle") {
+                            return new FallingCircle({ x, y: startY }, speed, radius, color, borderColor);
+                        } else {
+                            return new RotatingSquare({ x, y: startY }, speed, size, color, borderColor, angularSpeed);
+                        }
+                    } else if (kind === "animals") {
+                        const emoji = randomChoice(animalEmojis);
+                        return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                    } else {
+                        const emoji = randomChoice(toolEmojis);
+                        return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                    }
+                };
+
+                levelObjects.push({ startTime, factory });
+            }
+
+            levelObjects.sort((a, b) => a.startTime - b.startTime);
+            return { difficulty, duration: durationMs, levelObjects, theme, kind };
+        }
+
+        // Main Game Class
+        class Game {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext("2d");
+                this.field = new GameField(canvas.width, canvas.height);
+
+                const playerWidth = 110;
+                const playerHeight = 18;
+                this.player = new Player(
+                    { x: canvas.width / 2, y: canvas.height - playerHeight - 12 },
+                    playerWidth,
+                    playerHeight,
+                    "#22e246",
+                    "#ffffff"
+                );
+
+                this.stars = [];
+                for (let i = 0; i < 80; i++) {
+                    this.stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                    });
+                }
+
+                this.fireworks = new Fireworks();
+                this.audioManager = new AudioManager();
+                this.backgroundMusic = document.getElementById("background-music");
+                this.levels = [];
+                this.currentLevelIndex = 0;
+                this.status = "IDLE";
+                this.animationFrameId = 0;
+
+                this.leftPressed = false;
+                this.rightPressed = false;
+                this.upPressed = false;
+                this.downPressed = false;
+
+                this.levelStartTime = 0;
+                this.lastFrameTime = 0;
+                this.nextLevelObjectIndex = 0;
+                this.isLevelPassed = false;
+                this.levelPassedStartTime = 0;
+
+                this.resetLevels();
+                this.initControls();
+                this.updateHud(0, 0);
+                this.renderFrame();
+            }
+
+            resetLevels() {
+                this.levels = [];
+                const duration = 25000;
+                const themes = ["night", "day", "factory", "ocean", "space"];
+                const kinds = ["shapes", "animals", "tools"];
+                const baseDifficulties = [0.7, 0.85, 0.9, 0.95, 1.0];
+
+                for (let i = 0; i < 100; i++) {
+                    const cycleIndex = i % 5;
+                    const cycleNumber = Math.floor(i / 5);
+                    const baseDifficulty = baseDifficulties[cycleIndex];
+                    const difficulty = baseDifficulty + cycleNumber * 0.15;
+                    const theme = themes[cycleIndex];
+                    const kind = kinds[cycleIndex % 3];
+
+                    this.levels.push(generateLevel(duration, difficulty, this.field, theme, kind));
+                }
+
+                this.currentLevelIndex = 0;
+            }
+
+            start() {
+                if (this.status === "RUNNING") return;
+
+                this.audioManager.initAudio();
+                this.resetLevels();
+                this.currentLevelIndex = 0;
+                this.isLevelPassed = false;
+                this.status = "RUNNING";
+
+                const now = performance.now();
+                this.field.gameObjects = [];
+                this.player.isAlive = true;
+                this.levelStartTime = now;
+                this.lastFrameTime = now;
+                this.nextLevelObjectIndex = 0;
+
+                document.getElementById("game-over-overlay").classList.add("hidden");
+                document.getElementById("level-passed-overlay").classList.add("hidden");
+                document.getElementById("welcome-overlay").classList.add("hidden");
+
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.currentTime = 0;
+                    this.backgroundMusic.play().catch(() => {});
+                }
+
+                document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
+                this.loop(now);
+            }
+
+            pause() {
+                if (this.status !== "RUNNING") return;
+                this.status = "PAUSED";
+                document.getElementById("status").textContent = "Status: PAUSED";
+                if (this.backgroundMusic) this.backgroundMusic.pause();
+            }
+
+            resume() {
+                if (this.status !== "PAUSED") return;
+                this.status = "RUNNING";
+                document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
+                this.lastFrameTime = performance.now();
+                if (this.backgroundMusic) this.backgroundMusic.play();
+                this.loop(this.lastFrameTime);
+            }
+
+            stop() {
+                this.status = "STOPPED";
+                this.isLevelPassed = false;
+                document.getElementById("status").textContent = "Status: STOPPED";
+                document.getElementById("game-over-overlay").classList.add("hidden");
+                document.getElementById("level-passed-overlay").classList.add("hidden");
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.pause();
+                    this.backgroundMusic.currentTime = 0;
+                }
+                
+                cancelAnimationFrame(this.animationFrameId);
+                this.field.gameObjects = [];
+                this.updateHud(0, 0);
+                this.renderFrame();
+            }
+
+            loop = (timestamp) => {
+                if (this.status !== "RUNNING") {
+                    cancelAnimationFrame(this.animationFrameId);
+                    return;
+                }
+
+                const deltaMs = timestamp - this.lastFrameTime;
+                const deltaSeconds = deltaMs / 1000;
+                this.lastFrameTime = timestamp;
+
+                const level = this.levels[this.currentLevelIndex];
+                const elapsedMs = timestamp - this.levelStartTime;
+
+                while (
+                    this.nextLevelObjectIndex < level.levelObjects.length &&
+                    level.levelObjects[this.nextLevelObjectIndex].startTime <= elapsedMs
+                ) {
+                    const levelObj = level.levelObjects[this.nextLevelObjectIndex];
+                    this.field.addObject(levelObj.factory());
+                    this.nextLevelObjectIndex++;
+                }
+
+                if (this.leftPressed) this.player.moveLeft(deltaSeconds);
+                if (this.rightPressed) this.player.moveRight(deltaSeconds);
+                if (this.upPressed) this.player.moveUp(deltaSeconds);
+                if (this.downPressed) this.player.moveDown(deltaSeconds);
+                this.player.move(deltaSeconds, this.field);
+
+                this.field.gameObjects.forEach((obj) => obj.move(deltaSeconds, this.field));
+                this.field.removeDead();
+
+                for (const obj of this.field.gameObjects) {
+                    if (obj.hasCollision(this.player)) {
+                        this.handlePlayerHit();
+                        break;
+                    }
+                }
+
+                if (elapsedMs >= level.duration && this.field.gameObjects.length === 0) {
+                    this.handleLevelFinished();
+                }
+
+                this.fireworks.update(deltaSeconds);
+                this.updateHud(elapsedMs, level.duration);
+                this.renderFrame();
+
+                this.animationFrameId = requestAnimationFrame(this.loop);
+            }
+
+            handlePlayerHit() {
+                this.status = "STOPPED";
+                document.getElementById("status").textContent = "Status: GAME OVER";
+                document.getElementById("game-over-overlay").classList.remove("hidden");
+                this.audioManager.playCollisionSound();
+            }
+
+            handleLevelFinished() {
+                this.status = "STOPPED";
+                this.isLevelPassed = true;
+                this.levelPassedStartTime = performance.now();
+                this.audioManager.playLevelPassSound();
+
+                for (let i = 0; i < 5; i++) {
+                    const x = randomBetween(100, this.canvas.width - 100);
+                    const y = randomBetween(100, this.canvas.height - 100);
+                    this.fireworks.createExplosion(x, y, 40);
+                    this.audioManager.playFireworksSound();
+                }
+
+                if (this.currentLevelIndex < this.levels.length - 1) {
+                    document.getElementById("level-passed-text").textContent = `You Pass Level ${this.currentLevelIndex + 1}`;
+                    document.getElementById("level-passed-overlay").classList.remove("hidden");
+                    this.animationFrameId = requestAnimationFrame(this.levelPassedLoop);
+                } else {
+                    this.status = "FINISHED";
+                    document.getElementById("status").textContent = "Status: ALL LEVELS COMPLETE";
+                    document.getElementById("level-passed-text").textContent = `You Pass Level ${this.currentLevelIndex + 1} - ALL COMPLETE!`;
+                    document.getElementById("level-passed-overlay").classList.remove("hidden");
+                }
+            }
+
+            levelPassedLoop = (timestamp) => {
+                const elapsedMs = timestamp - this.levelPassedStartTime;
+                const FIREWORKS_INTERVAL = 200;
+
+                if (Math.floor(elapsedMs / FIREWORKS_INTERVAL) % 1 === 0 && elapsedMs % FIREWORKS_INTERVAL < 16) {
+                    const x = randomBetween(100, this.canvas.width - 100);
+                    const y = randomBetween(100, this.canvas.height - 100);
+                    this.fireworks.createExplosion(x, y, 30);
+                    this.audioManager.playFireworksSound();
+                }
+
+                this.fireworks.update(0.016);
+                this.renderFrame();
+
+                if (elapsedMs < 5000) {
+                    this.animationFrameId = requestAnimationFrame(this.levelPassedLoop);
+                } else {
+                    this.advanceToNextLevel();
+                }
+            }
+
+            advanceToNextLevel() {
+                if (this.currentLevelIndex < this.levels.length - 1) {
+                    this.isLevelPassed = false;
+                    this.currentLevelIndex++;
+                    document.getElementById("level-passed-overlay").classList.add("hidden");
+
+                    const now = performance.now();
+                    this.field.gameObjects = [];
+                    this.levelStartTime = now;
+                    this.lastFrameTime = now;
+                    this.nextLevelObjectIndex = 0;
+
+                    this.status = "RUNNING";
+                    document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
+                    this.animationFrameId = requestAnimationFrame(this.loop);
+                }
+            }
+
+            renderFrame() {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+
+                const level = this.levels[this.currentLevelIndex];
+
+                ctx.save();
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, "#020617");
+                grad.addColorStop(1, "#020b3d");
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.fillStyle = "#ffffff";
+                this.stars.forEach((s) => {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.restore();
+
+                this.player.render(ctx);
+                this.field.gameObjects.forEach((obj) => obj.render(ctx));
+                this.fireworks.render(ctx);
+            }
+
+            updateHud(elapsedMs, totalMs) {
+                const elapsedSeconds = elapsedMs / 1000;
+                const totalSeconds = totalMs / 1000;
+
+                document.getElementById("objects").textContent = `Objects: ${this.field.gameObjects.length}`;
+                document.getElementById("time").textContent = `Time: ${elapsedSeconds.toFixed(2)}s / ${totalSeconds.toFixed(2)}s`;
+
+                const progress = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 0;
+                document.getElementById("progress-fill").style.width = `${progress * 100}%`;
+            }
+
+            initControls() {
+                const btnStart = document.getElementById("btn-start");
+                const btnPause = document.getElementById("btn-pause");
+                const btnResume = document.getElementById("btn-resume");
+                const btnStop = document.getElementById("btn-stop");
+                const btnStartWelcome = document.getElementById("btn-start-welcome");
+                const playAgainBtn = document.getElementById("btn-play-again");
+                const nextLevelBtn = document.getElementById("btn-next-level");
+
+                btnStart.addEventListener("click", () => this.start());
+                btnStartWelcome.addEventListener("click", () => this.start());
+                btnPause.addEventListener("click", () => this.pause());
+                btnResume.addEventListener("click", () => this.resume());
+                btnStop.addEventListener("click", () => this.stop());
+                playAgainBtn.addEventListener("click", () => this.start());
+                nextLevelBtn.addEventListener("click", () => this.advanceToNextLevel());
+
+                window.addEventListener("keydown", (e) => {
+                    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") this.leftPressed = true;
+                    else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") this.rightPressed = true;
+                    else if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") this.upPressed = true;
+                    else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") this.downPressed = true;
+                });
+
+                window.addEventListener("keyup", (e) => {
+                    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") this.leftPressed = false;
+                    else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") this.rightPressed = false;
+                    else if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") this.upPressed = false;
+                    else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") this.downPressed = false;
+                });
+
+                const handlePointer = (clientX, clientY) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = clientX - rect.left;
+                    const y = clientY - rect.top;
+                    this.player.location.x = x * (this.canvas.width / rect.width);
+                    this.player.location.y = y * (this.canvas.height / rect.height);
+                };
+
+                this.canvas.addEventListener("pointerdown", (e) => handlePointer(e.clientX, e.clientY));
+                this.canvas.addEventListener("pointermove", (e) => {
+                    if (e.buttons !== 0 || e.pressure > 0) handlePointer(e.clientX, e.clientY);
+                });
+            }
+        }
+
+        // Bootstrap
+        const canvas = document.getElementById("game-canvas");
+        const game = new Game(canvas);
+        window.game = game;
+        console.log("✅ Game initialized successfully!");
+    </script>
+</body>
+</html>
