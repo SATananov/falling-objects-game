@@ -1168,9 +1168,15 @@ console.log("Game object:", game);
 
 // Auto-start the game after a short delay to allow audio context initialization
 setTimeout(() => {
-  // Only auto-start if not already started
-  if (game.status === "IDLE") {
-    console.log("Auto-starting game after user interaction delay...");
-    game.start();
+  try {
+    console.log("Attempting to auto-start game...");
+    console.log("Current status:", game.status);
+    if (game.status === "IDLE") {
+      console.log("Starting game...");
+      game.start();
+      console.log("Game started successfully!");
+    }
+  } catch (error) {
+    console.error("Error auto-starting game:", error);
   }
-}, 2000);
+}, 1500);
