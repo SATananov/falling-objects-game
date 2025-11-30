@@ -1156,27 +1156,44 @@ class Game {
 
 // ---------- Bootstrap ----------
 
-const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-const game = new Game(canvas);
-
-console.log("✅ Game initialized successfully!");
-console.log("Canvas:", canvas);
-console.log("Game object:", game);
-
-// @ts-ignore
-(window as any).game = game;
-
-// Auto-start the game after a short delay to allow audio context initialization
-setTimeout(() => {
-  try {
-    console.log("Attempting to auto-start game...");
-    console.log("Current status:", game.status);
-    if (game.status === "IDLE") {
-      console.log("Starting game...");
-      game.start();
-      console.log("Game started successfully!");
-    }
-  } catch (error) {
-    console.error("Error auto-starting game:", error);
+try {
+  const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+  if (!canvas) {
+    throw new Error("Canvas element not found!");
   }
-}, 1500);
+  
+  const game = new Game(canvas);
+
+  console.log("✅ Game initialized successfully!");
+  console.log("Canvas:", canvas);
+  console.log("Game object:", game);
+
+  // @ts-ignore
+  (window as any).game = game;
+
+  // Make a global start function for debugging
+  // @ts-ignore
+  (window as any).startGame = () => {
+    console.log("Manual start triggered");
+    game.start();
+  };
+
+  // Auto-start the game after 2 seconds
+  console.log("Will auto-start game in 2 seconds...");
+  const startTimer = setTimeout(() => {
+    try {
+      console.log("🎮 Auto-starting game NOW");
+      game.start();
+    } catch (error) {
+      console.error("❌ Error during auto-start:", error);
+    }
+  }, 2000);
+
+  // @ts-ignore
+  (window as any).cancelAutoStart = () => clearTimeout(startTimer);
+} catch (error) {
+  console.error("❌ FATAL ERROR:", error);
+  if (error instanceof Error) {
+    console.error("Stack:", error.stack);
+  }
+}
