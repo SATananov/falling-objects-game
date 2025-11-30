@@ -1156,6 +1156,17 @@ class Game {
 
 // ---------- Bootstrap ----------
 
+// Set up error display
+const errorDisplay = document.getElementById("error-display") as HTMLDivElement;
+
+function showError(msg: string) {
+  console.error(msg);
+  if (errorDisplay) {
+    errorDisplay.style.display = "block";
+    errorDisplay.textContent += msg + "\n";
+  }
+}
+
 try {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
   if (!canvas) {
@@ -1165,8 +1176,6 @@ try {
   const game = new Game(canvas);
 
   console.log("✅ Game initialized successfully!");
-  console.log("Canvas:", canvas);
-  console.log("Game object:", game);
 
   // @ts-ignore
   (window as any).game = game;
@@ -1174,8 +1183,12 @@ try {
   // Make a global start function for debugging
   // @ts-ignore
   (window as any).startGame = () => {
-    console.log("Manual start triggered");
-    game.start();
+    try {
+      console.log("Manual start triggered");
+      game.start();
+    } catch (e) {
+      showError("Start error: " + String(e));
+    }
   };
 
   // Auto-start the game after 2 seconds
@@ -1185,15 +1198,13 @@ try {
       console.log("🎮 Auto-starting game NOW");
       game.start();
     } catch (error) {
-      console.error("❌ Error during auto-start:", error);
+      showError("Auto-start error: " + String(error));
     }
   }, 2000);
 
   // @ts-ignore
   (window as any).cancelAutoStart = () => clearTimeout(startTimer);
 } catch (error) {
-  console.error("❌ FATAL ERROR:", error);
-  if (error instanceof Error) {
-    console.error("Stack:", error.stack);
-  }
+  const errorMsg = error instanceof Error ? error.message + "\n" + error.stack : String(error);
+  showError("FATAL: " + errorMsg);
 }
