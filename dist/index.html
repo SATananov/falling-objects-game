@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎮 Falling Objects Game - FOR DESSI and EVA</title>
-  <script type="module" crossorigin src="/falling-objects-game/assets/index-Cz3KjCaU.js"></script>
+  <script type="module" crossorigin src="/falling-objects-game/assets/index-BpsWHyTv.js"></script>
   <link rel="stylesheet" crossorigin href="/falling-objects-game/assets/index-DNDk9yEm.css">
 </head>
 <body>
@@ -63,8 +63,15 @@
     <audio id="background-music" loop preload="auto" style="display:none;">
         <source src="/falling-objects-game/assets/music-BfOU1F-j.mp3" type="audio/mpeg">
     </audio>
-
-    <div id="error-display" style="display:none; position: fixed; top: 10px; right: 10px; background: #ff4444; color: white; padding: 15px; border-radius: 5px; z-index: 9999; max-width: 300px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto;"></div>
 
+
+    <script>
+        function startGame() {
+            if (window.game) window.game.start();
+        }
+        function stopGame() {
+            if (window.game) window.game.stop();
+        }
+    </script>
 </body>
 </html>

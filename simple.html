@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Falling Objects Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #44ff44;
+            font-size: 36px;
+        }
+        #game-canvas {
+            border: 3px solid #44ff44;
+            background: #0a0e27;
+            display: block;
+            margin: 0 auto;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(68, 255, 68, 0.5);
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #44ff44;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #66ff66;
+            transform: scale(1.05);
+        }
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 FALLING OBJECTS GAME</h1>
+        <canvas id="game-canvas" width="800" height="500"></canvas>
+        <div class="controls">
+            <button onclick="startGame()">▶️ START</button>
+            <button onclick="stopGame()">⏹️ STOP</button>
+        </div>
+        <div class="instructions">
+            <p>⬅️ Use Arrow Keys or Mouse to move</p>
+            <p>Catch the falling objects! Score increases with each level!</p>
+        </div>
+    </div>
+
+    <script type="module" src="./src/simple-game.ts"></script>
+
+    <script>
+        function startGame() {
+            if (window.game) window.game.start();
+        }
+        function stopGame() {
+            if (window.game) window.game.stop();
+        }
+    </script>
+</body>
+</html>
