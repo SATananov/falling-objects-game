@@ -1159,5 +1159,9 @@ class Game {
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 const game = new Game(canvas);
 
+console.log("✅ Game initialized successfully!");
+console.log("Canvas:", canvas);
+console.log("Game object:", game);
+
 // @ts-ignore
 (window as any).game = game;
