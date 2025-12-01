@@ -456,9 +456,17 @@
     </div>
 
     <!-- Background Music Element -->
-    <audio id="background-music-element" loop style="display:none;">
-        <source src="./music.mp3" type="audio/mpeg">
-    </audio>
+    <audio id="background-music-element" loop style="display:none;"></audio>
+
+    <script type="module">
+        // Import music and set the source dynamically
+        import musicUrl from '/src/music.ts?url';
+        const audioEl = document.getElementById('background-music-element');
+        const sourceEl = document.createElement('source');
+        sourceEl.src = musicUrl;
+        sourceEl.type = 'audio/mpeg';
+        audioEl.appendChild(sourceEl);
+    </script>
 
     <script>
         // Utility functions
