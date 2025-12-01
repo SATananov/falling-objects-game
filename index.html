@@ -3,27 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Falling Objects Game - FOR DESSI and EVA</title>
+    <title>🎮 Falling Objects Game - За Dessi и Eva | 100 Нива</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
         }
 
         .container {
             background: white;
-            border-radius: 20px;
+            border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 30px;
             max-width: 900px;
@@ -34,45 +30,25 @@
             text-align: center;
             color: #667eea;
             margin-bottom: 10px;
-            font-size: 40px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 36px;
         }
 
         .subtitle {
             text-align: center;
-            color: #764ba2;
-            margin-bottom: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .game-info {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-
-        .game-info div {
-            margin: 8px 0;
+            color: #999;
+            margin-bottom: 30px;
             font-size: 14px;
-            color: #333;
-        }
-
-        .game-info strong {
-            color: #667eea;
         }
 
         #gameCanvas {
             display: block;
             background: #1a1a2e;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            margin: 20px auto;
             width: 100%;
             max-width: 800px;
             height: 500px;
-            border: 3px solid #667eea;
-            border-radius: 12px;
-            margin: 20px auto;
             cursor: crosshair;
         }
 
@@ -87,12 +63,12 @@
         button {
             padding: 12px 24px;
             font-size: 16px;
-            font-weight: bold;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
         }
 
         #btnStart {
@@ -103,12 +79,8 @@
         }
 
         #btnStart:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        #btnStart:active {
-            transform: translateY(0);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
         #btnPause, #btnResume, #btnStop {
@@ -131,26 +103,22 @@
             transform: translateY(-2px);
         }
 
-        #btnMusic.music-off {
-            background: #e74c3c;
-        }
-
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 15px;
             margin: 20px 0;
-            background: #f9f9f9;
+            background: #f5f5f5;
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 10px;
         }
 
-        .stat-item {
+        .stat {
             text-align: center;
             padding: 15px;
             background: white;
             border-radius: 8px;
-            border: 2px solid #eee;
+            border-left: 4px solid #667eea;
         }
 
         .stat-label {
@@ -158,6 +126,7 @@
             color: #999;
             text-transform: uppercase;
             margin-bottom: 8px;
+            font-weight: bold;
         }
 
         .stat-value {
@@ -166,12 +135,27 @@
             color: #667eea;
         }
 
+        .progress-bar {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.2s;
+        }
+
         .hint {
             text-align: center;
             color: #666;
             font-size: 13px;
             margin-top: 20px;
-            line-height: 1.6;
+            line-height: 1.8;
         }
 
         .hint strong {
@@ -182,20 +166,12 @@
 <body>
     <div class="container">
         <h1>🎮 FALLING OBJECTS GAME</h1>
-        <div class="subtitle">FOR DESSI and EVA</div>
+        <div class="subtitle">За Dessi и Eva | 100 Нива • Музика • 5 Теми • Емодзи</div>
 
-        <div class="game-info">
-            <div><strong>📊 Уровни:</strong> 100 различни нива</div>
-            <div><strong>🎵 Музика:</strong> Вкл. фонова музика</div>
-            <div><strong>🎯 Падащи обекти:</strong> Емоджи и форми</div>
-            <div><strong>🌈 Теми:</strong> 5 различни фона (Night, Day, Factory, Ocean, Space)</div>
-            <div><strong>📈 Трудност:</strong> Растяща с всяко ниво</div>
-        </div>
-
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
 
         <div class="controls">
-            <button id="btnStart">🚀 START</button>
+            <button id="btnStart">▶️ START</button>
             <button id="btnPause">⏸️ PAUSE</button>
             <button id="btnResume">▶️ RESUME</button>
             <button id="btnStop">⏹️ STOP</button>
@@ -203,168 +179,147 @@
         </div>
 
         <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">Level</div>
+            <div class="stat">
+                <div class="stat-label">Ниво</div>
                 <div class="stat-value"><span id="level">1</span>/100</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">Objects</div>
+            <div class="stat">
+                <div class="stat-label">Обекти</div>
                 <div class="stat-value" id="objects">0</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">Time</div>
-                <div class="stat-value"><span id="time">0.0</span>s</div>
+            <div class="stat">
+                <div class="stat-label">Време</div>
+                <div class="stat-value"><span id="time">0</span>s</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">Progress</div>
-                <div id="progress" style="height: 30px; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 6px; margin-top: 8px;"></div>
+            <div class="stat">
+                <div class="stat-label">Прогрес</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
             </div>
         </div>
 
         <div class="hint">
-            <strong>⌨️ Контроли:</strong> Arrow Keys или WASD за движение | Mouse Click & Drag за позиционирање | 25 секунди на ниво<br>
-            <strong>🎯 Цел:</strong> Събери максимум падащи обекти преди времето да свърши
+            <strong>⌨️ Управление:</strong> ← → или A/D за движение<br>
+            <strong>🎯 Цел:</strong> Събери емодзи | Всяко ниво → по-трудно | Достигни ниво 100!<br>
+            <strong>🎵 Музика:</strong> Натисни MUSIC бутон | <strong>Време:</strong> 25 сек за ниво
         </div>
     </div>
 
-    <!-- NO EXTERNAL AUDIO NEEDED - Generated in-browser -->
-
     <script>
+        // ============ GAME CONFIG ============
+        const config = {
+            CANVAS_WIDTH: 800,
+            CANVAS_HEIGHT: 500,
+            LEVEL_DURATION: 25,
+            MAX_LEVELS: 100,
+            PLAYER_WIDTH: 110,
+            PLAYER_HEIGHT: 18,
+            PLAYER_SPEED: 400,
+            PLAYER_Y: 460
+        };
+
         // ============ GAME STATE ============
         const game = {
             canvas: document.getElementById("gameCanvas"),
             ctx: null,
-            audioContext: null,
-            musicPlaying: false,
-            status: "IDLE", // IDLE, RUNNING, PAUSED, STOPPED
+            running: false,
+            paused: false,
             level: 0,
             time: 0,
-            levelDuration: 25, // seconds
             objects: [],
-            player: { x: 400, y: 460, w: 110, h: 18, color: "#22e246" },
+            player: { 
+                x: config.CANVAS_WIDTH / 2, 
+                y: config.PLAYER_Y,
+                w: config.PLAYER_WIDTH,
+                h: config.PLAYER_HEIGHT,
+                color: "#22e246"
+            },
             keys: {},
-            mouse: { x: 400, y: 460, pressed: false },
-            score: 0,
-            lastFrame: 0,
             musicMuted: false,
-            animationFrameId: 0
+            audioContext: null,
+            lastFrameTime: 0,
+            animationId: 0
         };
 
         game.ctx = game.canvas.getContext("2d");
 
-        // ============ THEMES ============
+        // ============ THEMES & EMOJIS ============
         const themes = [
-            { name: "night", bg: "#020617", bg2: "#020b3d" },
-            { name: "day", bg: "#9ad9ff", bg2: "#e9f7ff" },
-            { name: "factory", bg: "#2b103e", bg2: "#7e3ff2" },
-            { name: "ocean", bg: "#1a5f7a", bg2: "#0d4a63" },
-            { name: "space", bg: "#000011", bg2: "#0a0033" }
+            { id: 0, name: "Night", bg1: "#020617", bg2: "#020b3d", emojis: ["🐶", "🐱", "🦊", "🐻", "🐰", "🦁", "🐼"] },
+            { id: 1, name: "Day", bg1: "#9ad9ff", bg2: "#e9f7ff", emojis: ["🍎", "🍊", "🍋", "🍌", "🍉", "🍓", "🌻"] },
+            { id: 2, name: "Factory", bg1: "#2b103e", bg2: "#7e3ff2", emojis: ["🔧", "🛠", "⚙", "🔩", "🪚", "🔨", "🪛"] },
+            { id: 3, name: "Ocean", bg1: "#1a5f7a", bg2: "#0d4a63", emojis: ["🐠", "🐟", "🐡", "🦈", "🐙", "🦑", "🐚"] },
+            { id: 4, name: "Space", bg1: "#000011", bg2: "#0a0033", emojis: ["⭐", "🌟", "✨", "💫", "🔆", "🪐", "🛸"] }
         ];
 
-        const emojis = {
-            animals: ["🐶", "🐱", "🦊", "🐻", "🐰", "🦁", "🐼"],
-            fruits: ["🍎", "🍊", "🍋", "🍌", "🍉", "🍓", "🌻"],
-            tools: ["🔧", "🛠", "⚙", "🔩", "🪚", "🔨", "🪛"],
-            sea: ["🐠", "🐟", "🐡", "🦈", "🐙", "🦑", "🐚"],
-            space: ["⭐", "🌟", "✨", "💫", "🔆", "🪐", "🛸"]
-        };
-
         // ============ UTILITIES ============
-        function randomBetween(min, max) {
+        function random(min, max) {
             return Math.random() * (max - min) + min;
         }
 
-        function randomChoice(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
+        function randomInt(min, max) {
+            return Math.floor(random(min, max + 1));
         }
 
-        // ============ DRAW BACKGROUND ============
+        function getTheme(level) {
+            return themes[level % themes.length];
+        }
+
+        function randomEmoji(level) {
+            const theme = getTheme(level);
+            return theme.emojis[randomInt(0, theme.emojis.length - 1)];
+        }
+
+        // ============ BACKGROUND ============
         function drawBackground() {
-            const themeIndex = game.level % 5;
-            const theme = themes[themeIndex];
-            const w = game.canvas.width;
-            const h = game.canvas.height;
-
-            const grad = game.ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, theme.bg);
+            const theme = getTheme(game.level);
+            const grad = game.ctx.createLinearGradient(0, 0, 0, config.CANVAS_HEIGHT);
+            grad.addColorStop(0, theme.bg1);
             grad.addColorStop(1, theme.bg2);
+            
             game.ctx.fillStyle = grad;
-            game.ctx.fillRect(0, 0, w, h);
+            game.ctx.fillRect(0, 0, config.CANVAS_WIDTH, config.CANVAS_HEIGHT);
 
-            // Theme-specific decorations
-            if (themeIndex === 0) { // night - stars
+            // Stars for night theme
+            if (game.level % 5 === 0) {
                 game.ctx.fillStyle = "#ffffff";
-                for (let i = 0; i < 50; i++) {
-                    const x = Math.sin(i * 12.9898) * 10000 % w;
-                    const y = Math.cos(i * 78.233) * 10000 % h;
+                for (let i = 0; i < 30; i++) {
+                    const x = Math.sin(i * 2) * 200 + i * 15;
+                    const y = Math.cos(i * 3) * 150 + i * 10;
                     game.ctx.beginPath();
-                    game.ctx.arc(x, y, 1, 0, Math.PI * 2);
+                    game.ctx.arc(x % config.CANVAS_WIDTH, y % config.CANVAS_HEIGHT, 1.5, 0, Math.PI * 2);
                     game.ctx.fill();
                 }
-            } else if (themeIndex === 1) { // day - grass
-                game.ctx.fillStyle = "#6cc070";
-                game.ctx.fillRect(0, h - 40, w, 40);
-            } else if (themeIndex === 2) { // factory - lines
-                game.ctx.strokeStyle = "rgba(255,255,255,0.1)";
-                game.ctx.lineWidth = 2;
-                for (let i = 0; i < 6; i++) {
-                    game.ctx.beginPath();
-                    game.ctx.moveTo((i * w) / 6, 0);
-                    game.ctx.lineTo((i * w) / 6, h);
-                    game.ctx.stroke();
-                }
-            } else if (themeIndex === 3) { // ocean - waves
-                game.ctx.strokeStyle = "rgba(255,255,255,0.15)";
-                game.ctx.lineWidth = 2;
-                for (let i = 0; i < 5; i++) {
-                    game.ctx.beginPath();
-                    game.ctx.arc(w / 2, h / 2 + i * 40, 60 - i * 10, 0, Math.PI * 2);
-                    game.ctx.stroke();
-                }
-            } else if (themeIndex === 4) { // space - purple overlay
-                game.ctx.fillStyle = "rgba(200, 100, 255, 0.1)";
-                game.ctx.fillRect(0, 0, w / 2, h / 2);
             }
         }
 
         // ============ CREATE FALLING OBJECT ============
         function createObject() {
             const difficulty = 0.7 + game.level * 0.15;
-            const speed = 80 + difficulty * 100;
-            const x = Math.random() * (game.canvas.width - 40) + 20;
-
-            const themeIndex = game.level % 5;
-            let emoji;
-            switch (themeIndex) {
-                case 0: emoji = randomChoice(emojis.animals); break;
-                case 1: emoji = randomChoice(emojis.fruits); break;
-                case 2: emoji = randomChoice(emojis.tools); break;
-                case 3: emoji = randomChoice(emojis.sea); break;
-                case 4: emoji = randomChoice(emojis.space); break;
-            }
+            const speed = 80 + difficulty * 120;
+            const x = random(40, config.CANVAS_WIDTH - 40);
 
             return {
                 x: x,
-                y: -30,
-                emoji: emoji,
+                y: -40,
+                emoji: randomEmoji(game.level),
                 speed: speed,
-                size: 32,
-                alive: true
+                size: 32
             };
         }
 
         // ============ UPDATE ============
-        function update(deltaTime) {
-            // Update time
-            game.time += deltaTime;
+        function update(dt) {
+            game.time += dt;
 
             // Check level complete
-            if (game.time >= game.levelDuration) {
+            if (game.time >= config.LEVEL_DURATION) {
                 if (game.objects.length === 0) {
                     game.level++;
-                    if (game.level >= 100) {
-                        game.status = "STOPPED";
-                        alert("🎉 YOU WON! All 100 levels completed!");
+                    if (game.level >= config.MAX_LEVELS) {
+                        game.running = false;
+                        alert("🎉 ПОЗДРАВЛЕНИЯ! Завърши всички 100 нива! 🎉");
                     } else {
                         game.time = 0;
                         game.objects = [];
@@ -372,51 +327,49 @@
                 }
             }
 
-            // Spawn new objects
-            const difficulty = 0.7 + game.level * 0.15;
+            // Spawn objects
             const spawnRate = Math.max(0.05, 0.3 - game.level * 0.002);
             if (Math.random() < spawnRate) {
                 game.objects.push(createObject());
             }
-            
+
             // Limit max objects on screen
-            if (game.objects.length > 30) {
+            if (game.objects.length > 25) {
                 game.objects.splice(0, 5);
             }
 
-            // Update player position
-            const moveSpeed = 420;
+            // Update player
+            const moveSpeed = config.PLAYER_SPEED;
             if (game.keys["ArrowLeft"] || game.keys["a"] || game.keys["A"]) {
-                game.player.x -= moveSpeed * deltaTime;
+                game.player.x -= moveSpeed * dt;
             }
             if (game.keys["ArrowRight"] || game.keys["d"] || game.keys["D"]) {
-                game.player.x += moveSpeed * deltaTime;
+                game.player.x += moveSpeed * dt;
             }
             if (game.keys["ArrowUp"] || game.keys["w"] || game.keys["W"]) {
-                game.player.y -= moveSpeed * deltaTime;
+                game.player.y -= moveSpeed * dt;
             }
             if (game.keys["ArrowDown"] || game.keys["s"] || game.keys["S"]) {
-                game.player.y += moveSpeed * deltaTime;
+                game.player.y += moveSpeed * dt;
             }
 
-            // Clamp player to canvas
-            game.player.x = Math.max(game.player.w / 2, Math.min(game.canvas.width - game.player.w / 2, game.player.x));
-            game.player.y = Math.max(game.player.h / 2, Math.min(game.canvas.height - game.player.h / 2, game.player.y));
+            // Clamp player
+            game.player.x = Math.max(game.player.w / 2, Math.min(config.CANVAS_WIDTH - game.player.w / 2, game.player.x));
+            game.player.y = Math.max(game.player.h / 2, Math.min(config.CANVAS_HEIGHT - game.player.h / 2, game.player.y));
 
-            // Update objects
+            // Update objects and collision
             for (let i = game.objects.length - 1; i >= 0; i--) {
                 const obj = game.objects[i];
-                obj.y += obj.speed * deltaTime;
+                obj.y += obj.speed * dt;
 
-                // Check collision with player
+                // Collision
                 if (obj.y > game.player.y - 30 &&
                     obj.y < game.player.y + game.player.h &&
                     obj.x > game.player.x - game.player.w / 2 &&
                     obj.x < game.player.x + game.player.w / 2) {
                     game.objects.splice(i, 1);
-                    game.score++;
-                    playSound(800, 100, 0.3);
-                } else if (obj.y > game.canvas.height) {
+                    playSound(800, 100, 0.2);
+                } else if (obj.y > config.CANVAS_HEIGHT) {
                     game.objects.splice(i, 1);
                 }
             }
@@ -442,167 +395,161 @@
                 game.player.w,
                 game.player.h
             );
-
-            // Draw score overlay
-            game.ctx.fillStyle = "rgba(0,0,0,0.5)";
-            game.ctx.fillRect(0, 0, game.canvas.width, 40);
-            game.ctx.fillStyle = "#fff";
-            game.ctx.font = "16px Arial";
-            game.ctx.textAlign = "left";
-            game.ctx.textBaseline = "top";
-            game.ctx.fillText(`Level: ${game.level + 1}/100`, 10, 10);
-            game.ctx.fillText(`Objects: ${game.objects.length}`, 200, 10);
-            game.ctx.fillText(`Time: ${game.time.toFixed(1)}s / ${game.levelDuration}s`, 400, 10);
+            game.ctx.strokeStyle = "#fff";
+            game.ctx.lineWidth = 2;
+            game.ctx.strokeRect(
+                game.player.x - game.player.w / 2,
+                game.player.y - game.player.h / 2,
+                game.player.w,
+                game.player.h
+            );
         }
 
         // ============ GAME LOOP ============
         function gameLoop(timestamp) {
-            if (!game.lastFrame) game.lastFrame = timestamp;
-            const deltaTime = (timestamp - game.lastFrame) / 1000;
-            game.lastFrame = timestamp;
+            if (!game.lastFrameTime) game.lastFrameTime = timestamp;
+            const deltaTime = (timestamp - game.lastFrameTime) / 1000;
+            game.lastFrameTime = timestamp;
 
-            if (game.status === "RUNNING") {
+            if (game.running && !game.paused) {
                 update(deltaTime);
-                draw();
-
-                // Update HUD
-                document.getElementById("level").textContent = game.level + 1;
-                document.getElementById("objects").textContent = game.objects.length;
-                document.getElementById("time").textContent = game.time.toFixed(1);
-                document.getElementById("progress").style.width = ((game.time / game.levelDuration) * 100) + "%";
             }
 
-            game.animationFrameId = requestAnimationFrame(gameLoop);
+            draw();
+
+            // Update HUD
+            document.getElementById("level").textContent = game.level + 1;
+            document.getElementById("objects").textContent = game.objects.length;
+            document.getElementById("time").textContent = Math.floor(game.time);
+            document.getElementById("progress").style.width = ((game.time / config.LEVEL_DURATION) * 100) + "%";
+
+            if (game.running) {
+                game.animationId = requestAnimationFrame(gameLoop);
+            }
         }
 
-        // ============ SOUND ============
-        let audioCtx = null;
-        let musicOscillators = [];
-        
-        function playSound(freq, ms, vol) {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            try {
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + ms / 1000);
-                osc.start(now);
-                osc.stop(now + ms / 1000);
-            } catch (e) {}
+        // ============ AUDIO ============
+        function initAudio() {
+            if (!game.audioContext) {
+                game.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
         }
 
-        function startBackgroundMusic() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (game.musicPlaying) return;
-            game.musicPlaying = true;
-            
+        function playSound(freq, duration, volume) {
+            initAudio();
             try {
-                const now = audioCtx.currentTime;
-                const frequencies = [440, 330, 220, 330];
-                let time = now;
+                const now = game.audioContext.currentTime;
+                const osc = game.audioContext.createOscillator();
+                const gain = game.audioContext.createGain();
                 
-                for (let i = 0; i < 40; i++) {
-                    const freq = frequencies[i % frequencies.length];
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    
-                    osc.type = "sine";
-                    osc.frequency.value = freq;
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    
-                    gain.gain.setValueAtTime(0.08, time);
-                    gain.gain.linearRampToValueAtTime(0, time + 0.5);
-                    
-                    osc.start(time);
-                    osc.stop(time + 0.5);
-                    musicOscillators.push(osc);
-                    
-                    time += 0.5;
-                }
+                osc.connect(gain);
+                gain.connect(game.audioContext.destination);
+                osc.frequency.value = freq;
+                
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+                
+                osc.start(now);
+                osc.stop(now + duration / 1000);
             } catch (e) {}
         }
 
-        function stopBackgroundMusic() {
-            game.musicPlaying = false;
-            musicOscillators.forEach(osc => {
-                try { osc.stop(); } catch (e) {}
-            });
-            musicOscillators = [];
+        let musicNoteIndex = 0;
+        function playBackgroundMusic() {
+            if (!game.musicMuted && game.running) {
+                const melody = [440, 330, 220, 330];
+                playSound(melody[musicNoteIndex % melody.length], 400, 0.08);
+                musicNoteIndex++;
+                
+                setTimeout(() => {
+                    if (game.running && !game.musicMuted) {
+                        playBackgroundMusic();
+                    }
+                }, 500);
+            }
         }
 
         // ============ CONTROLS ============
         document.getElementById("btnStart").addEventListener("click", () => {
-            game.status = "RUNNING";
+            game.running = true;
+            game.paused = false;
             game.level = 0;
             game.time = 0;
             game.objects = [];
-            game.score = 0;
-            game.lastFrame = 0;
-            if (!game.musicMuted) startBackgroundMusic();
+            game.lastFrameTime = 0;
+            musicNoteIndex = 0;
+            
+            if (!game.musicMuted) {
+                playBackgroundMusic();
+            }
+            
             gameLoop(performance.now());
         });
 
         document.getElementById("btnPause").addEventListener("click", () => {
-            if (game.status === "RUNNING") {
-                game.status = "PAUSED";
-                stopBackgroundMusic();
+            if (game.running) {
+                game.paused = true;
             }
         });
 
         document.getElementById("btnResume").addEventListener("click", () => {
-            if (game.status === "PAUSED") {
-                game.status = "RUNNING";
-                if (!game.musicMuted) startBackgroundMusic();
+            if (game.paused) {
+                game.paused = false;
+                if (!game.musicMuted) {
+                    playBackgroundMusic();
+                }
             }
         });
 
         document.getElementById("btnStop").addEventListener("click", () => {
-            game.status = "STOPPED";
-            stopBackgroundMusic();
-            cancelAnimationFrame(game.animationFrameId);
-            game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+            game.running = false;
+            game.paused = false;
+            cancelAnimationFrame(game.animationId);
+            game.objects = [];
+            game.level = 0;
+            game.time = 0;
+            game.lastFrameTime = 0;
+            game.ctx.clearRect(0, 0, config.CANVAS_WIDTH, config.CANVAS_HEIGHT);
             drawBackground();
         });
 
         document.getElementById("btnMusic").addEventListener("click", function() {
+            game.musicMuted = !game.musicMuted;
             if (game.musicMuted) {
-                game.musicMuted = false;
-                if (game.status === "RUNNING") startBackgroundMusic();
-                this.textContent = "🔊 MUSIC: ON";
-                this.classList.remove("music-off");
-            } else {
-                game.musicMuted = true;
-                stopBackgroundMusic();
                 this.textContent = "🔇 MUSIC: OFF";
-                this.classList.add("music-off");
+            } else {
+                this.textContent = "🔊 MUSIC: ON";
+                if (game.running) {
+                    playBackgroundMusic();
+                }
             }
         });
 
-        // Keyboard
-        window.addEventListener("keydown", e => game.keys[e.key] = true);
-        window.addEventListener("keyup", e => game.keys[e.key] = false);
-
-        // Mouse
-        game.canvas.addEventListener("mousemove", e => {
-            const rect = game.canvas.getBoundingClientRect();
-            game.player.x = (e.clientX - rect.left) * (game.canvas.width / rect.width);
+        // Keyboard controls
+        window.addEventListener("keydown", e => {
+            game.keys[e.key] = true;
         });
 
-        // Touch
+        window.addEventListener("keyup", e => {
+            game.keys[e.key] = false;
+        });
+
+        // Mouse/Touch controls
+        game.canvas.addEventListener("mousemove", e => {
+            const rect = game.canvas.getBoundingClientRect();
+            game.player.x = (e.clientX - rect.left) * (config.CANVAS_WIDTH / rect.width);
+        });
+
         game.canvas.addEventListener("touchmove", e => {
             e.preventDefault();
             const rect = game.canvas.getBoundingClientRect();
             const touch = e.touches[0];
-            game.player.x = (touch.clientX - rect.left) * (game.canvas.width / rect.width);
+            game.player.x = (touch.clientX - rect.left) * (config.CANVAS_WIDTH / rect.width);
         });
 
         // Initial draw
         drawBackground();
+        console.log("✅ Игра заредена! Натисни START за начало");
     </script>
 </body>
 </html>
