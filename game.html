@@ -485,31 +485,38 @@
 
             ensureAudioContext() {
                 if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    
-                    // Compressor for maximum loudness (loudness wars!)
-                    this.compressor = this.audioContext.createDynamicsCompressor();
-                    this.compressor.threshold.value = -24;
-                    this.compressor.knee.value = 30;
-                    this.compressor.ratio.value = 12;
-                    this.compressor.attack.value = 0.003;
-                    this.compressor.release.value = 0.25;
-                    
-                    // Analyser for monitoring
-                    this.analyser = this.audioContext.createAnalyser();
-                    
-                    // Master gain at absolute maximum
-                    this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 1.0;
-                    
-                    // Chain: masterGain -> compressor -> analyser -> destination
-                    this.masterGain.connect(this.compressor);
-                    this.compressor.connect(this.analyser);
-                    this.analyser.connect(this.audioContext.destination);
-                    
-                    console.log("✅ Audio system initialized with compressor for MAX loudness");
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        console.log("📊 AudioContext state:", this.audioContext.state);
+                        console.log("📊 AudioContext sampleRate:", this.audioContext.sampleRate);
+                        
+                        // Compressor for maximum loudness (loudness wars!)
+                        this.compressor = this.audioContext.createDynamicsCompressor();
+                        this.compressor.threshold.value = -24;
+                        this.compressor.knee.value = 30;
+                        this.compressor.ratio.value = 12;
+                        this.compressor.attack.value = 0.003;
+                        this.compressor.release.value = 0.25;
+                        
+                        // Analyser for monitoring
+                        this.analyser = this.audioContext.createAnalyser();
+                        
+                        // Master gain at absolute maximum
+                        this.masterGain = this.audioContext.createGain();
+                        this.masterGain.gain.value = 1.0;
+                        
+                        // Chain: masterGain -> compressor -> analyser -> destination
+                        this.masterGain.connect(this.compressor);
+                        this.compressor.connect(this.analyser);
+                        this.analyser.connect(this.audioContext.destination);
+                        
+                        console.log("✅ Audio system initialized with compressor for MAX loudness");
+                    } catch (e) {
+                        console.error("💥 FATAL Audio Error:", e);
+                        alert("Audio Error: " + e.message);
+                    }
                 }
-                if (this.audioContext.state === "suspended") {
+                if (this.audioContext && this.audioContext.state === "suspended") {
                     this.audioContext.resume();
                     console.log("🔊 Audio context resumed");
                 }
@@ -561,33 +568,43 @@
 
             playBackgroundMusic() {
                 // Play ambient background music - MAXIMUM LOUDNESS
-                if (!this.audioContext) return;
+                if (!this.audioContext) {
+                    console.error("🚫 No audioContext available for music!");
+                    return;
+                }
                 
                 try {
                     const now = this.audioContext.currentTime;
                     
                     // Create a CHORD with multiple harmonics for MAXIMUM impact
                     const frequencies = [110, 220, 330, 440, 660]; // Power chord with harmonics
+                    let oscCount = 0;
                     
                     frequencies.forEach((freq, idx) => {
-                        const osc = this.audioContext.createOscillator();
-                        const gain = this.audioContext.createGain();
-                        
-                        osc.connect(gain);
-                        gain.connect(this.masterGain);
-                        
-                        osc.type = idx < 2 ? "square" : "sine";
-                        osc.frequency.value = freq;
-                        
-                        // Full power envelope
-                        gain.gain.setValueAtTime(0.8, now);  // START AT 80% POWER
-                        gain.gain.exponentialRampToValueAtTime(0.1, now + 3.8);
-                        
-                        osc.start(now);
-                        osc.stop(now + 4);
+                        try {
+                            const osc = this.audioContext.createOscillator();
+                            const gain = this.audioContext.createGain();
+                            
+                            osc.connect(gain);
+                            gain.connect(this.masterGain);
+                            
+                            osc.type = idx < 2 ? "square" : "sine";
+                            osc.frequency.value = freq;
+                            
+                            // Full power envelope
+                            gain.gain.setValueAtTime(0.8, now);  // START AT 80% POWER
+                            gain.gain.exponentialRampToValueAtTime(0.1, now + 3.8);
+                            
+                            osc.start(now);
+                            osc.stop(now + 4);
+                            oscCount++;
+                        } catch (e) {
+                            console.error(`Error creating oscillator at ${freq}Hz:`, e);
+                        }
                     });
                     
-                    console.log("🎵 MAXIMUM LOUDNESS BACKGROUND CHORD PLAYING");
+                    console.log(`🎵 Created ${oscCount} oscillators for background music`);
+                    console.log(`🎵 AudioContext time: ${now}, state: ${this.audioContext.state}`);
                 } catch (e) {
                     console.error("❌ Background music error:", e);
                 }
