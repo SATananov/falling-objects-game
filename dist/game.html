@@ -455,6 +455,11 @@
         <p class="hint">Made By S.A.T. - Tanashi/Stefano De Tanini Brand.</p>
     </div>
 
+    <!-- Background Music Element -->
+    <audio id="background-music-element" loop style="display:none;">
+        <source src="/falling-objects-game/assets/music-BfOU1F-j.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
         // Utility functions
         function boundsIntersect(a, b) {
@@ -578,9 +583,22 @@
             }
 
             playBackgroundMusic() {
-                // Play ambient background music - ULTRA AGGRESSIVE WAY
+                // PLAN B: Use HTML audio element as primary source
+                const audioElement = document.getElementById("background-music-element");
+                if (audioElement && audioElement.paused) {
+                    try {
+                        audioElement.currentTime = 0;
+                        audioElement.play();
+                        console.log("🎵 HTML AUDIO: Playing background music from MP3");
+                        return;
+                    } catch (e) {
+                        console.error("HTML audio error:", e);
+                    }
+                }
+                
+                // FALLBACK: Web Audio API synthesis if HTML audio fails
                 if (!this.audioContext) {
-                    console.error("🚫 No audioContext available for music!");
+                    console.error("🚫 No audio available!");
                     return;
                 }
                 
@@ -588,12 +606,11 @@
                     const now = this.audioContext.currentTime;
                     const duration = 4;
                     
-                    // Method 1: Use multiple simultaneous oscillators at different octaves
-                    const bassFreqs = [55, 110]; // Sub-bass and bass
-                    const midFreqs = [220, 330, 440]; // Mid tones
-                    const highFreqs = [660, 880]; // High tones
+                    // Multiple simultaneous oscillators for fallback
+                    const bassFreqs = [55, 110];
+                    const midFreqs = [220, 330, 440];
+                    const highFreqs = [660, 880];
                     
-                    // ALL oscillators together for MAXIMUM VOLUME
                     [...bassFreqs, ...midFreqs, ...highFreqs].forEach((freq, idx) => {
                         try {
                             const osc = this.audioContext.createOscillator();
@@ -602,15 +619,12 @@
                             osc.connect(gain);
                             gain.connect(this.masterGain);
                             
-                            // Mix of waveforms for richness
                             if (idx < 2) osc.type = "sine";
                             else if (idx < 4) osc.type = "square";
                             else osc.type = "triangle";
                             
                             osc.frequency.value = freq;
-                            
-                            // HIGH VOLUME START
-                            gain.gain.setValueAtTime(1.0, now);  // 100% FROM START
+                            gain.gain.setValueAtTime(1.0, now);
                             gain.gain.exponentialRampToValueAtTime(0.05, now + duration - 0.1);
                             
                             osc.start(now);
@@ -620,7 +634,7 @@
                         }
                     });
                     
-                    console.log(`🎵 MEGA MUSIC: 7 simultaneous oscillators + compressor + 100% master gain`);
+                    console.log(`🎵 WEB AUDIO FALLBACK: 7 oscillators`);
                 } catch (e) {
                     console.error("❌ Music error:", e);
                 }
