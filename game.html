@@ -541,6 +541,30 @@
             playFireworksSound() {
                 this.playSound(800, 0.05, 0.25, "square");
             }
+
+            playBackgroundMusic() {
+                // Play ambient background music using simple sine waves
+                if (!this.audioContext) return;
+                
+                const now = this.audioContext.currentTime;
+                const notes = [262, 330, 392, 523]; // C, E, G, C (chord)
+                
+                notes.forEach((freq, index) => {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    
+                    osc.type = "sine";
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 4);
+                    
+                    osc.start(now);
+                    osc.stop(now + 4);
+                });
+            }
         }
 
         // Fireworks
@@ -889,6 +913,8 @@
                 this.nextLevelObjectIndex = 0;
                 this.isLevelPassed = false;
                 this.levelPassedStartTime = 0;
+                this.musicLoopStarted = false;
+                this.musicMuted = false;
 
                 this.resetLevels();
                 this.initControls();
@@ -935,44 +961,28 @@
                 document.getElementById("level-passed-overlay").classList.add("hidden");
                 document.getElementById("welcome-overlay").classList.add("hidden");
                 
-                // Start background music
-                if (this.backgroundMusic) {
-                    this.backgroundMusic.currentTime = 0;
-                    this.backgroundMusic.volume = 1.0;
-                    this.backgroundMusic.muted = false;
-                    
-                    // Try to play immediately
-                    let musicStarted = false;
-                    const attemptPlay = () => {
-                        if (musicStarted) return;
-                        
-                        const playPromise = this.backgroundMusic.play();
-                        if (playPromise) {
-                            playPromise
-                                .then(() => {
-                                    musicStarted = true;
-                                    console.log("✅ Background music playing!");
-                                    document.getElementById("btn-music").textContent = "🔊 MUSIC: ON";
-                                })
-                                .catch(err => {
-                                    console.log("Play failed, retrying...", err);
-                                    setTimeout(attemptPlay, 100);
-                                });
-                        }
-                    };
-                    
-                    attemptPlay();
+                // Start background music loop
+                if (!this.musicLoopStarted) {
+                    this.musicLoopStarted = true;
+                    this.playMusicLoop();
                 }
                 
                 document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
+                document.getElementById("btn-music").textContent = "🔊 MUSIC: ON";
                 this.loop(now);
+            }
+
+            playMusicLoop = () => {
+                if (this.status === "RUNNING") {
+                    this.audioManager.playBackgroundMusic();
+                    setTimeout(() => this.playMusicLoop(), 4000); // Repeat every 4 seconds
+                }
             }
 
             pause() {
                 if (this.status !== "RUNNING") return;
                 this.status = "PAUSED";
                 document.getElementById("status").textContent = "Status: PAUSED";
-                if (this.backgroundMusic) this.backgroundMusic.pause();
             }
 
             resume() {
@@ -980,20 +990,16 @@
                 this.status = "RUNNING";
                 document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
                 this.lastFrameTime = performance.now();
-                if (this.backgroundMusic) this.backgroundMusic.play();
                 this.loop(this.lastFrameTime);
             }
 
             stop() {
                 this.status = "STOPPED";
                 this.isLevelPassed = false;
+                this.musicLoopStarted = false;
                 document.getElementById("status").textContent = "Status: STOPPED";
                 document.getElementById("game-over-overlay").classList.add("hidden");
                 document.getElementById("level-passed-overlay").classList.add("hidden");
-                if (this.backgroundMusic) {
-                    this.backgroundMusic.pause();
-                    this.backgroundMusic.currentTime = 0;
-                }
                 
                 cancelAnimationFrame(this.animationFrameId);
                 this.field.gameObjects = [];
@@ -1231,15 +1237,16 @@
                 nextLevelBtn.addEventListener("click", () => this.advanceToNextLevel());
 
                 btnMusic.addEventListener("click", () => {
-                    if (this.backgroundMusic && this.backgroundMusic.paused) {
-                        this.backgroundMusic.play().then(() => {
-                            btnMusic.textContent = "🔊 MUSIC: ON";
-                        }).catch(e => {
-                            btnMusic.textContent = "🔇 MUSIC: ERROR";
-                        });
-                    } else if (this.backgroundMusic) {
-                        this.backgroundMusic.pause();
-                        btnMusic.textContent = "🔇 MUSIC: OFF";
+                    if (this.status === "RUNNING") {
+                        if (!this.musicMuted) {
+                            this.musicMuted = true;
+                            this.audioManager.masterGain.gain.value = 0;
+                            btnMusic.textContent = "🔇 MUSIC: OFF";
+                        } else {
+                            this.musicMuted = false;
+                            this.audioManager.masterGain.gain.value = 1.0;
+                            btnMusic.textContent = "� MUSIC: ON";
+                        }
                     }
                 });
 
