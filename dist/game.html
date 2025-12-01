@@ -538,40 +538,33 @@
             }
 
             playBackgroundMusic() {
-                // Play ambient background music - VERY LOUD background tone
+                // Play ambient background music - SIMPLE AND LOUD
                 if (!this.audioContext) return;
                 
-                const now = this.audioContext.currentTime;
-                
-                // Bass tone for background
-                const bassOsc = this.audioContext.createOscillator();
-                const bassGain = this.audioContext.createGain();
-                bassOsc.connect(bassGain);
-                bassGain.connect(this.masterGain);
-                bassOsc.type = "square";
-                bassOsc.frequency.value = 110; // Low bass
-                bassGain.gain.setValueAtTime(0.3, now);
-                bassGain.gain.exponentialRampToValueAtTime(0.05, now + 4);
-                bassOsc.start(now);
-                bassOsc.stop(now + 4);
-                
-                // Melody notes - louder
-                const notes = [262, 330, 392, 523];
-                notes.forEach((freq, index) => {
+                try {
+                    const now = this.audioContext.currentTime;
+                    
+                    // ONE POWERFUL TONE - 440 Hz (A note) at 50% volume
                     const osc = this.audioContext.createOscillator();
                     const gain = this.audioContext.createGain();
                     
                     osc.connect(gain);
                     gain.connect(this.masterGain);
                     
-                    osc.type = "triangle";
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.35, now);
-                    gain.gain.exponentialRampToValueAtTime(0.05, now + 4);
+                    osc.type = "sine";
+                    osc.frequency.value = 440; // A4 note
+                    
+                    // Simple volume envelope: fade in and out
+                    gain.gain.setValueAtTime(0.5, now);  // START AT 50%
+                    gain.gain.exponentialRampToValueAtTime(0.1, now + 3.8);  // Fade to 10%
                     
                     osc.start(now);
                     osc.stop(now + 4);
-                });
+                    
+                    console.log("🎵 BACKGROUND MUSIC PLAYING - 440 Hz at 50% volume");
+                } catch (e) {
+                    console.error("❌ Background music error:", e);
+                }
             }
         }
 
