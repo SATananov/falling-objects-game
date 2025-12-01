@@ -935,28 +935,33 @@
                 document.getElementById("level-passed-overlay").classList.add("hidden");
                 document.getElementById("welcome-overlay").classList.add("hidden");
                 
-                // Aggressive music start
+                // Start background music
                 if (this.backgroundMusic) {
                     this.backgroundMusic.currentTime = 0;
                     this.backgroundMusic.volume = 1.0;
                     this.backgroundMusic.muted = false;
                     
-                    const playMusic = () => {
+                    // Try to play immediately
+                    let musicStarted = false;
+                    const attemptPlay = () => {
+                        if (musicStarted) return;
+                        
                         const playPromise = this.backgroundMusic.play();
                         if (playPromise) {
                             playPromise
                                 .then(() => {
-                                    console.log("✅ Music started!");
+                                    musicStarted = true;
+                                    console.log("✅ Background music playing!");
                                     document.getElementById("btn-music").textContent = "🔊 MUSIC: ON";
                                 })
-                                .catch(e => {
-                                    console.log("Music error:", e);
-                                    setTimeout(playMusic, 500);
+                                .catch(err => {
+                                    console.log("Play failed, retrying...", err);
+                                    setTimeout(attemptPlay, 100);
                                 });
                         }
                     };
                     
-                    playMusic();
+                    attemptPlay();
                 }
                 
                 document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
@@ -1271,6 +1276,31 @@
         const canvas = document.getElementById("game-canvas");
         const game = new Game(canvas);
         window.game = game;
+        
+        // Enable audio on any user interaction
+        function enableAudio() {
+            const music = document.getElementById("background-music");
+            if (music) {
+                music.muted = false;
+                music.volume = 1.0;
+                // Try to play a silent sound to unlock audio context
+                music.play().then(() => {
+                    music.pause();
+                    music.currentTime = 0;
+                    console.log("✅ Audio context unlocked!");
+                }).catch(e => console.log("Audio unlock attempt:", e));
+            }
+            // Remove this listener after first interaction
+            document.removeEventListener("click", enableAudio);
+            document.removeEventListener("keydown", enableAudio);
+            document.removeEventListener("touchstart", enableAudio);
+        }
+        
+        // Add listeners for user interaction
+        document.addEventListener("click", enableAudio);
+        document.addEventListener("keydown", enableAudio);
+        document.addEventListener("touchstart", enableAudio);
+        
         console.log("✅ Game initialized successfully!");
     </script>
 </body>
