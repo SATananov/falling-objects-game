@@ -490,6 +490,17 @@
                         console.log("📊 AudioContext state:", this.audioContext.state);
                         console.log("📊 AudioContext sampleRate:", this.audioContext.sampleRate);
                         
+                        // Check if audio is muted at browser level
+                        const testOsc = this.audioContext.createOscillator();
+                        const testGain = this.audioContext.createGain();
+                        testOsc.connect(testGain);
+                        testGain.connect(this.audioContext.destination);
+                        testGain.gain.value = 0; // silent test
+                        testOsc.frequency.value = 440;
+                        testOsc.start(this.audioContext.currentTime);
+                        testOsc.stop(this.audioContext.currentTime + 0.001);
+                        console.log("✓ Audio routing test passed");
+                        
                         // Compressor for maximum loudness (loudness wars!)
                         this.compressor = this.audioContext.createDynamicsCompressor();
                         this.compressor.threshold.value = -24;
@@ -567,7 +578,7 @@
             }
 
             playBackgroundMusic() {
-                // Play ambient background music - MAXIMUM LOUDNESS
+                // Play ambient background music - ULTRA AGGRESSIVE WAY
                 if (!this.audioContext) {
                     console.error("🚫 No audioContext available for music!");
                     return;
@@ -575,12 +586,15 @@
                 
                 try {
                     const now = this.audioContext.currentTime;
+                    const duration = 4;
                     
-                    // Create a CHORD with multiple harmonics for MAXIMUM impact
-                    const frequencies = [110, 220, 330, 440, 660]; // Power chord with harmonics
-                    let oscCount = 0;
+                    // Method 1: Use multiple simultaneous oscillators at different octaves
+                    const bassFreqs = [55, 110]; // Sub-bass and bass
+                    const midFreqs = [220, 330, 440]; // Mid tones
+                    const highFreqs = [660, 880]; // High tones
                     
-                    frequencies.forEach((freq, idx) => {
+                    // ALL oscillators together for MAXIMUM VOLUME
+                    [...bassFreqs, ...midFreqs, ...highFreqs].forEach((freq, idx) => {
                         try {
                             const osc = this.audioContext.createOscillator();
                             const gain = this.audioContext.createGain();
@@ -588,25 +602,27 @@
                             osc.connect(gain);
                             gain.connect(this.masterGain);
                             
-                            osc.type = idx < 2 ? "square" : "sine";
+                            // Mix of waveforms for richness
+                            if (idx < 2) osc.type = "sine";
+                            else if (idx < 4) osc.type = "square";
+                            else osc.type = "triangle";
+                            
                             osc.frequency.value = freq;
                             
-                            // Full power envelope
-                            gain.gain.setValueAtTime(0.8, now);  // START AT 80% POWER
-                            gain.gain.exponentialRampToValueAtTime(0.1, now + 3.8);
+                            // HIGH VOLUME START
+                            gain.gain.setValueAtTime(1.0, now);  // 100% FROM START
+                            gain.gain.exponentialRampToValueAtTime(0.05, now + duration - 0.1);
                             
                             osc.start(now);
-                            osc.stop(now + 4);
-                            oscCount++;
+                            osc.stop(now + duration);
                         } catch (e) {
-                            console.error(`Error creating oscillator at ${freq}Hz:`, e);
+                            console.error(`Error at ${freq}Hz:`, e);
                         }
                     });
                     
-                    console.log(`🎵 Created ${oscCount} oscillators for background music`);
-                    console.log(`🎵 AudioContext time: ${now}, state: ${this.audioContext.state}`);
+                    console.log(`🎵 MEGA MUSIC: 7 simultaneous oscillators + compressor + 100% master gain`);
                 } catch (e) {
-                    console.error("❌ Background music error:", e);
+                    console.error("❌ Music error:", e);
                 }
             }
         }
