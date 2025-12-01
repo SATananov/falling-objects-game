@@ -457,7 +457,7 @@
 
     <!-- Audio element for background music -->
     <audio id="background-music" loop preload="auto" style="display:none;" crossorigin="anonymous">
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        <source src="https://www.hochmuth.com/uploads/media/Haydn_Cello_Concerto_D-1.mp3" type="audio/mpeg">
     </audio>
 
     <script>
@@ -935,10 +935,28 @@
                 document.getElementById("level-passed-overlay").classList.add("hidden");
                 document.getElementById("welcome-overlay").classList.add("hidden");
                 
+                // Aggressive music start
                 if (this.backgroundMusic) {
                     this.backgroundMusic.currentTime = 0;
                     this.backgroundMusic.volume = 1.0;
-                    this.backgroundMusic.play().catch(() => {});
+                    this.backgroundMusic.muted = false;
+                    
+                    const playMusic = () => {
+                        const playPromise = this.backgroundMusic.play();
+                        if (playPromise) {
+                            playPromise
+                                .then(() => {
+                                    console.log("✅ Music started!");
+                                    document.getElementById("btn-music").textContent = "🔊 MUSIC: ON";
+                                })
+                                .catch(e => {
+                                    console.log("Music error:", e);
+                                    setTimeout(playMusic, 500);
+                                });
+                        }
+                    };
+                    
+                    playMusic();
                 }
                 
                 document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
