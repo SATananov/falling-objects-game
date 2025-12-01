@@ -692,7 +692,6 @@ class Game {
   private stars: Point[] = [];
   private fireworks: Fireworks = new Fireworks();
   private audioManager: AudioManager = new AudioManager();
-  private backgroundMusic = document.getElementById("background-music") as HTMLAudioElement | null;
   private levelPassedTimer = 0;
   private levelPassedTimeoutId: number | null = null;
   private isLevelPassed = false;
@@ -794,14 +793,6 @@ class Game {
     this.levelPassedOverlay.classList.add("hidden");
     this.welcomeOverlay.classList.add("hidden");
     
-    // Play background music
-    if (this.backgroundMusic) {
-      this.backgroundMusic.currentTime = 0;
-      this.backgroundMusic.play().catch(() => {
-        // Browser may block autoplay, user interaction required
-      });
-    }
-    
     this.statusLabel.textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
     this.loop(now);
   }
@@ -812,9 +803,6 @@ class Game {
     }
     this.status = "PAUSED";
     this.statusLabel.textContent = "Status: PAUSED";
-    if (this.backgroundMusic) {
-      this.backgroundMusic.pause();
-    }
   }
 
   resume(): void {
@@ -826,9 +814,6 @@ class Game {
       this.currentLevelIndex + 1
     }/${this.levels.length})`;
     this.lastFrameTime = performance.now();
-    if (this.backgroundMusic) {
-      this.backgroundMusic.play();
-    }
     this.loop(this.lastFrameTime);
   }
 
@@ -838,11 +823,6 @@ class Game {
     this.statusLabel.textContent = "Status: STOPPED";
     this.gameOverOverlay.classList.add("hidden");
     this.levelPassedOverlay.classList.add("hidden");
-    if (this.backgroundMusic) {
-      this.backgroundMusic.pause();
-      this.backgroundMusic.currentTime = 0;
-    }
-    
     cancelAnimationFrame(this.animationFrameId);
     this.field.gameObjects = [];
     this.updateHud(0, 0);
