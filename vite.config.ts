@@ -7,4 +7,11 @@ export default defineConfig({
     middlewareMode: false,
   },
   publicDir: "public",
+  build: {
+    rollupOptions: {
+      input: {
+        main: "game.html",
+      },
+    },
+  },
 });

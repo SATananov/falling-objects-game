@@ -378,6 +378,12 @@
             background: #17a2b8;
         }
 
+        #btn-music {
+            background: #9c27b0;
+            font-size: 16px;
+            padding: 12px 24px;
+        }
+
         @keyframes glowPulse {
             0%, 100% {
                 box-shadow: 0 0 15px rgba(40, 167, 69, 0.8), 0 0 30px rgba(40, 167, 69, 0.4);
@@ -443,14 +449,18 @@
             <button id="btn-pause">Pause</button>
             <button id="btn-resume">Resume</button>
             <button id="btn-stop">Stop</button>
+            <button id="btn-music">🔊 MUSIC: ON</button>
         </div>
 
         <p class="hint">Made By S.A.T. - Tanashi/Stefano De Tanini Brand.</p>
     </div>
 
+    <!-- Audio element for background music -->
+    <audio id="background-music" loop preload="auto" style="display:none;" crossorigin="anonymous">
+        <source src="/music.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
-        // ========== GAME CODE ==========
-        
         // Utility functions
         function boundsIntersect(a, b) {
             return (
@@ -480,7 +490,7 @@
                 if (!this.audioContext) {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 1.0; // 100% volume - MAX
+                    this.masterGain.gain.value = 1.0;
                     this.masterGain.connect(this.audioContext.destination);
                 }
                 if (this.audioContext.state === "suspended") {
@@ -492,7 +502,7 @@
                 this.ensureAudioContext();
             }
 
-            playSound(frequency, duration, volume = 0.5, type = "sine") {
+            playSound(frequency, duration, volume = 0.3, type = "sine") {
                 this.ensureAudioContext();
                 if (!this.audioContext) return;
 
@@ -517,19 +527,19 @@
             }
 
             playCollisionSound() {
-                this.playSound(200, 0.2, 1.0, "square");
-                setTimeout(() => this.playSound(150, 0.2, 0.9, "square"), 100);
+                this.playSound(200, 0.1, 0.4, "square");
+                setTimeout(() => this.playSound(150, 0.1, 0.3, "square"), 50);
             }
 
             playLevelPassSound() {
-                this.playSound(523, 0.2, 1.0, "sine");
-                setTimeout(() => this.playSound(659, 0.2, 1.0, "sine"), 150);
-                setTimeout(() => this.playSound(784, 0.2, 1.0, "sine"), 300);
-                setTimeout(() => this.playSound(1047, 0.3, 1.0, "sine"), 450);
+                this.playSound(523, 0.1, 0.3, "sine");
+                setTimeout(() => this.playSound(659, 0.1, 0.3, "sine"), 120);
+                setTimeout(() => this.playSound(784, 0.1, 0.3, "sine"), 240);
+                setTimeout(() => this.playSound(1047, 0.2, 0.3, "sine"), 360);
             }
 
             playFireworksSound() {
-                this.playSound(800, 0.1, 1.0, "square");
+                this.playSound(800, 0.05, 0.25, "square");
             }
         }
 
@@ -779,10 +789,42 @@
         }
 
         // Level Generator
-        function generateLevel(durationMs, difficulty, field, theme, kind) {
+        function generateLevel(durationMs, difficulty, field, theme, themeIndex) {
             const levelObjects = [];
-            const animalEmojis = ["🐶", "🐱", "🦊", "🐻", "🐰", "🦁", "🐼"];
-            const toolEmojis = ["🔧", "🛠", "⚙", "🔩", "🪚", "🔨", "🪛"];
+            
+            // Theme-specific objects
+            let objectFactory;
+            if (themeIndex === 0) { // night - animals
+                const animalEmojis = ["�", "�", "🦊", "�", "🐰", "🦁", "🐼"];
+                objectFactory = (x, startY, speed, size) => {
+                    const emoji = randomChoice(animalEmojis);
+                    return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                };
+            } else if (themeIndex === 1) { // day - fruits & nature
+                const dayEmojis = ["🍎", "🍊", "🍋", "🍌", "🍉", "🍓", "🌻"];
+                objectFactory = (x, startY, speed, size) => {
+                    const emoji = randomChoice(dayEmojis);
+                    return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                };
+            } else if (themeIndex === 2) { // factory - tools & gears
+                const toolEmojis = ["🔧", "🛠", "⚙", "🔩", "🪚", "🔨", "🪛"];
+                objectFactory = (x, startY, speed, size) => {
+                    const emoji = randomChoice(toolEmojis);
+                    return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                };
+            } else if (themeIndex === 3) { // ocean - sea creatures
+                const oceanEmojis = ["🐠", "🐟", "🐡", "🦈", "🐙", "🦑", "🐚"];
+                objectFactory = (x, startY, speed, size) => {
+                    const emoji = randomChoice(oceanEmojis);
+                    return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                };
+            } else { // space - celestial objects
+                const spaceEmojis = ["⭐", "🌟", "✨", "💫", "🔆", "🪐", "🛸"];
+                objectFactory = (x, startY, speed, size) => {
+                    const emoji = randomChoice(spaceEmojis);
+                    return new FallingEmoji({ x, y: startY }, speed, size, emoji);
+                };
+            }
 
             const objectsCount = Math.floor(durationMs / 1000 * difficulty * 1.5);
 
@@ -793,35 +835,15 @@
                 const minSpeed = 80 + difficulty * 30;
                 const maxSpeed = 190 + difficulty * 60;
                 const speed = randomBetween(minSpeed, maxSpeed);
-                const size = randomBetween(28, 48);
-                const radius = size / 2;
+                const size = randomBetween(32, 52);
 
-                const factory = () => {
-                    if (kind === "shapes") {
-                        const type = randomChoice(["circle", "square"]);
-                        const color = randomChoice(["#ff9f80", "#ffdf6e", "#85e3ff", "#baffc9"]);
-                        const borderColor = "#ffffff";
-                        const angularSpeed = randomBetween(-2.5, 2.5);
-
-                        if (type === "circle") {
-                            return new FallingCircle({ x, y: startY }, speed, radius, color, borderColor);
-                        } else {
-                            return new RotatingSquare({ x, y: startY }, speed, size, color, borderColor, angularSpeed);
-                        }
-                    } else if (kind === "animals") {
-                        const emoji = randomChoice(animalEmojis);
-                        return new FallingEmoji({ x, y: startY }, speed, size, emoji);
-                    } else {
-                        const emoji = randomChoice(toolEmojis);
-                        return new FallingEmoji({ x, y: startY }, speed, size, emoji);
-                    }
-                };
+                const factory = () => objectFactory(x, startY, speed, size);
 
                 levelObjects.push({ startTime, factory });
             }
 
             levelObjects.sort((a, b) => a.startTime - b.startTime);
-            return { difficulty, duration: durationMs, levelObjects, theme, kind };
+            return { difficulty, duration: durationMs, levelObjects, theme };
         }
 
         // Main Game Class
@@ -878,7 +900,6 @@
                 this.levels = [];
                 const duration = 25000;
                 const themes = ["night", "day", "factory", "ocean", "space"];
-                const kinds = ["shapes", "animals", "tools"];
                 const baseDifficulties = [0.7, 0.85, 0.9, 0.95, 1.0];
 
                 for (let i = 0; i < 100; i++) {
@@ -887,9 +908,8 @@
                     const baseDifficulty = baseDifficulties[cycleIndex];
                     const difficulty = baseDifficulty + cycleNumber * 0.15;
                     const theme = themes[cycleIndex];
-                    const kind = kinds[cycleIndex % 3];
 
-                    this.levels.push(generateLevel(duration, difficulty, this.field, theme, kind));
+                    this.levels.push(generateLevel(duration, difficulty, this.field, theme, cycleIndex));
                 }
 
                 this.currentLevelIndex = 0;
@@ -914,12 +934,13 @@
                 document.getElementById("game-over-overlay").classList.add("hidden");
                 document.getElementById("level-passed-overlay").classList.add("hidden");
                 document.getElementById("welcome-overlay").classList.add("hidden");
-
+                
                 if (this.backgroundMusic) {
                     this.backgroundMusic.currentTime = 0;
+                    this.backgroundMusic.volume = 1.0;
                     this.backgroundMusic.play().catch(() => {});
                 }
-
+                
                 document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
                 this.loop(now);
             }
@@ -1004,7 +1025,7 @@
                 this.renderFrame();
 
                 this.animationFrameId = requestAnimationFrame(this.loop);
-            }
+            };
 
             handlePlayerHit() {
                 this.status = "STOPPED";
@@ -1018,14 +1039,14 @@
                 this.isLevelPassed = true;
                 this.levelPassedStartTime = performance.now();
                 this.audioManager.playLevelPassSound();
-
+                
                 for (let i = 0; i < 5; i++) {
                     const x = randomBetween(100, this.canvas.width - 100);
                     const y = randomBetween(100, this.canvas.height - 100);
                     this.fireworks.createExplosion(x, y, 40);
                     this.audioManager.playFireworksSound();
                 }
-
+                
                 if (this.currentLevelIndex < this.levels.length - 1) {
                     document.getElementById("level-passed-text").textContent = `You Pass Level ${this.currentLevelIndex + 1}`;
                     document.getElementById("level-passed-overlay").classList.remove("hidden");
@@ -1041,36 +1062,36 @@
             levelPassedLoop = (timestamp) => {
                 const elapsedMs = timestamp - this.levelPassedStartTime;
                 const FIREWORKS_INTERVAL = 200;
-
+                
                 if (Math.floor(elapsedMs / FIREWORKS_INTERVAL) % 1 === 0 && elapsedMs % FIREWORKS_INTERVAL < 16) {
                     const x = randomBetween(100, this.canvas.width - 100);
                     const y = randomBetween(100, this.canvas.height - 100);
                     this.fireworks.createExplosion(x, y, 30);
                     this.audioManager.playFireworksSound();
                 }
-
+                
                 this.fireworks.update(0.016);
                 this.renderFrame();
-
+                
                 if (elapsedMs < 5000) {
                     this.animationFrameId = requestAnimationFrame(this.levelPassedLoop);
                 } else {
                     this.advanceToNextLevel();
                 }
-            }
+            };
 
             advanceToNextLevel() {
                 if (this.currentLevelIndex < this.levels.length - 1) {
                     this.isLevelPassed = false;
                     this.currentLevelIndex++;
                     document.getElementById("level-passed-overlay").classList.add("hidden");
-
+                    
                     const now = performance.now();
                     this.field.gameObjects = [];
                     this.levelStartTime = now;
                     this.lastFrameTime = now;
                     this.nextLevelObjectIndex = 0;
-
+                    
                     this.status = "RUNNING";
                     document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
                     this.animationFrameId = requestAnimationFrame(this.loop);
@@ -1082,21 +1103,74 @@
                 const w = this.canvas.width;
                 const h = this.canvas.height;
 
-                const level = this.levels[this.currentLevelIndex];
+                const themeIndex = this.currentLevelIndex % 5;
 
                 ctx.save();
-                const grad = ctx.createLinearGradient(0, 0, 0, h);
-                grad.addColorStop(0, "#020617");
-                grad.addColorStop(1, "#020b3d");
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, w, h);
 
-                ctx.fillStyle = "#ffffff";
-                this.stars.forEach((s) => {
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2);
-                    ctx.fill();
-                });
+                if (themeIndex === 0) { // night
+                    const grad = ctx.createLinearGradient(0, 0, 0, h);
+                    grad.addColorStop(0, "#020617");
+                    grad.addColorStop(1, "#020b3d");
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = "#ffffff";
+                    this.stars.forEach((s) => {
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                } else if (themeIndex === 1) { // day
+                    const grad = ctx.createLinearGradient(0, 0, 0, h);
+                    grad.addColorStop(0, "#9ad9ff");
+                    grad.addColorStop(1, "#e9f7ff");
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = "#6cc070";
+                    ctx.fillRect(0, h - 40, w, 40);
+                } else if (themeIndex === 2) { // factory
+                    const grad = ctx.createLinearGradient(0, 0, w, h);
+                    grad.addColorStop(0, "#2b103e");
+                    grad.addColorStop(1, "#7e3ff2");
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = "rgba(255,255,255,0.1)";
+                    for (let i = 0; i < 6; i++) {
+                        ctx.fillRect((i * w) / 6, 0, 8, h);
+                    }
+                } else if (themeIndex === 3) { // ocean
+                    const grad = ctx.createLinearGradient(0, 0, 0, h);
+                    grad.addColorStop(0, "#1a5f7a");
+                    grad.addColorStop(0.5, "#2a8fa5");
+                    grad.addColorStop(1, "#0d4a63");
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 5; i++) {
+                        ctx.beginPath();
+                        ctx.arc(w / 2, h / 2 + i * 40, 60 - i * 10, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                } else { // space
+                    const grad = ctx.createLinearGradient(0, 0, w, h);
+                    grad.addColorStop(0, "#000011");
+                    grad.addColorStop(0.5, "#0a0033");
+                    grad.addColorStop(1, "#000022");
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = "rgba(255,255,255,0.8)";
+                    for (let i = 0; i < 15; i++) {
+                        const x = Math.random() * w;
+                        const y = Math.random() * h;
+                        const r = Math.random() * 1.5;
+                        ctx.beginPath();
+                        ctx.arc(x, y, r, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = "rgba(200,100,255,0.1)";
+                    ctx.fillRect(0, 0, w / 2, h / 2);
+                }
+
                 ctx.restore();
 
                 this.player.render(ctx);
@@ -1123,6 +1197,7 @@
                 const btnStartWelcome = document.getElementById("btn-start-welcome");
                 const playAgainBtn = document.getElementById("btn-play-again");
                 const nextLevelBtn = document.getElementById("btn-next-level");
+                const btnMusic = document.getElementById("btn-music");
 
                 btnStart.addEventListener("click", () => this.start());
                 btnStartWelcome.addEventListener("click", () => this.start());
@@ -1131,6 +1206,19 @@
                 btnStop.addEventListener("click", () => this.stop());
                 playAgainBtn.addEventListener("click", () => this.start());
                 nextLevelBtn.addEventListener("click", () => this.advanceToNextLevel());
+
+                btnMusic.addEventListener("click", () => {
+                    if (this.backgroundMusic && this.backgroundMusic.paused) {
+                        this.backgroundMusic.play().then(() => {
+                            btnMusic.textContent = "🔊 MUSIC: ON";
+                        }).catch(e => {
+                            btnMusic.textContent = "🔇 MUSIC: ERROR";
+                        });
+                    } else if (this.backgroundMusic) {
+                        this.backgroundMusic.pause();
+                        btnMusic.textContent = "🔇 MUSIC: OFF";
+                    }
+                });
 
                 window.addEventListener("keydown", (e) => {
                     if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") this.leftPressed = true;
@@ -1167,10 +1255,5 @@
         window.game = game;
         console.log("✅ Game initialized successfully!");
     </script>
-
-    <!-- Audio element for background music - Using inline data (can be replaced with web audio) -->
-    <audio id="background-music" loop preload="auto" style="display:none;">
-        <!-- Will be controlled by JavaScript -->
-    </audio>
 </body>
 </html>
