@@ -131,6 +131,10 @@
             transform: translateY(-2px);
         }
 
+        #btnMusic.music-off {
+            background: #e74c3c;
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -223,17 +227,15 @@
         </div>
     </div>
 
-    <!-- BACKGROUND MUSIC -->
-    <audio id="bgMusic" loop style="display:none;">
-        <source src="music.mp3" type="audio/mpeg">
-    </audio>
+    <!-- NO EXTERNAL AUDIO NEEDED - Generated in-browser -->
 
     <script>
         // ============ GAME STATE ============
         const game = {
             canvas: document.getElementById("gameCanvas"),
             ctx: null,
-            bgMusic: document.getElementById("bgMusic"),
+            audioContext: null,
+            musicPlaying: false,
             status: "IDLE", // IDLE, RUNNING, PAUSED, STOPPED
             level: 0,
             time: 0,
@@ -475,6 +477,8 @@
 
         // ============ SOUND ============
         let audioCtx = null;
+        let musicOscillators = [];
+        
         function playSound(freq, ms, vol) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             try {
@@ -491,6 +495,46 @@
             } catch (e) {}
         }
 
+        function startBackgroundMusic() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (game.musicPlaying) return;
+            game.musicPlaying = true;
+            
+            try {
+                const now = audioCtx.currentTime;
+                const frequencies = [440, 330, 220, 330];
+                let time = now;
+                
+                for (let i = 0; i < 40; i++) {
+                    const freq = frequencies[i % frequencies.length];
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = "sine";
+                    osc.frequency.value = freq;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    gain.gain.setValueAtTime(0.08, time);
+                    gain.gain.linearRampToValueAtTime(0, time + 0.5);
+                    
+                    osc.start(time);
+                    osc.stop(time + 0.5);
+                    musicOscillators.push(osc);
+                    
+                    time += 0.5;
+                }
+            } catch (e) {}
+        }
+
+        function stopBackgroundMusic() {
+            game.musicPlaying = false;
+            musicOscillators.forEach(osc => {
+                try { osc.stop(); } catch (e) {}
+            });
+            musicOscillators = [];
+        }
+
         // ============ CONTROLS ============
         document.getElementById("btnStart").addEventListener("click", () => {
             game.status = "RUNNING";
@@ -499,41 +543,43 @@
             game.objects = [];
             game.score = 0;
             game.lastFrame = 0;
-            if (!game.musicMuted) game.bgMusic.play();
+            if (!game.musicMuted) startBackgroundMusic();
             gameLoop(performance.now());
         });
 
         document.getElementById("btnPause").addEventListener("click", () => {
             if (game.status === "RUNNING") {
                 game.status = "PAUSED";
-                game.bgMusic.pause();
+                stopBackgroundMusic();
             }
         });
 
         document.getElementById("btnResume").addEventListener("click", () => {
             if (game.status === "PAUSED") {
                 game.status = "RUNNING";
-                if (!game.musicMuted) game.bgMusic.play();
+                if (!game.musicMuted) startBackgroundMusic();
             }
         });
 
         document.getElementById("btnStop").addEventListener("click", () => {
             game.status = "STOPPED";
-            game.bgMusic.pause();
+            stopBackgroundMusic();
             cancelAnimationFrame(game.animationFrameId);
             game.ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
             drawBackground();
         });
 
-        document.getElementById("btnMusic").addEventListener("click", () => {
+        document.getElementById("btnMusic").addEventListener("click", function() {
             if (game.musicMuted) {
                 game.musicMuted = false;
-                game.bgMusic.play();
-                document.getElementById("btnMusic").textContent = "🔊 MUSIC: ON";
+                if (game.status === "RUNNING") startBackgroundMusic();
+                this.textContent = "🔊 MUSIC: ON";
+                this.classList.remove("music-off");
             } else {
                 game.musicMuted = true;
-                game.bgMusic.pause();
-                document.getElementById("btnMusic").textContent = "🔇 MUSIC: OFF";
+                stopBackgroundMusic();
+                this.textContent = "🔇 MUSIC: OFF";
+                this.classList.add("music-off");
             }
         });
 
