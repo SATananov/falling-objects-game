@@ -479,17 +479,39 @@
             constructor() {
                 this.audioContext = null;
                 this.masterGain = null;
+                this.compressor = null;
+                this.analyser = null;
             }
 
             ensureAudioContext() {
                 if (!this.audioContext) {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Compressor for maximum loudness (loudness wars!)
+                    this.compressor = this.audioContext.createDynamicsCompressor();
+                    this.compressor.threshold.value = -24;
+                    this.compressor.knee.value = 30;
+                    this.compressor.ratio.value = 12;
+                    this.compressor.attack.value = 0.003;
+                    this.compressor.release.value = 0.25;
+                    
+                    // Analyser for monitoring
+                    this.analyser = this.audioContext.createAnalyser();
+                    
+                    // Master gain at absolute maximum
                     this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 1.0;  // МАКСИМУМ звук
-                    this.masterGain.connect(this.audioContext.destination);
+                    this.masterGain.gain.value = 1.0;
+                    
+                    // Chain: masterGain -> compressor -> analyser -> destination
+                    this.masterGain.connect(this.compressor);
+                    this.compressor.connect(this.analyser);
+                    this.analyser.connect(this.audioContext.destination);
+                    
+                    console.log("✅ Audio system initialized with compressor for MAX loudness");
                 }
                 if (this.audioContext.state === "suspended") {
                     this.audioContext.resume();
+                    console.log("🔊 Audio context resumed");
                 }
             }
 
@@ -538,30 +560,34 @@
             }
 
             playBackgroundMusic() {
-                // Play ambient background music - SIMPLE AND LOUD
+                // Play ambient background music - MAXIMUM LOUDNESS
                 if (!this.audioContext) return;
                 
                 try {
                     const now = this.audioContext.currentTime;
                     
-                    // ONE POWERFUL TONE - 440 Hz (A note) at 50% volume
-                    const osc = this.audioContext.createOscillator();
-                    const gain = this.audioContext.createGain();
+                    // Create a CHORD with multiple harmonics for MAXIMUM impact
+                    const frequencies = [110, 220, 330, 440, 660]; // Power chord with harmonics
                     
-                    osc.connect(gain);
-                    gain.connect(this.masterGain);
+                    frequencies.forEach((freq, idx) => {
+                        const osc = this.audioContext.createOscillator();
+                        const gain = this.audioContext.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(this.masterGain);
+                        
+                        osc.type = idx < 2 ? "square" : "sine";
+                        osc.frequency.value = freq;
+                        
+                        // Full power envelope
+                        gain.gain.setValueAtTime(0.8, now);  // START AT 80% POWER
+                        gain.gain.exponentialRampToValueAtTime(0.1, now + 3.8);
+                        
+                        osc.start(now);
+                        osc.stop(now + 4);
+                    });
                     
-                    osc.type = "sine";
-                    osc.frequency.value = 440; // A4 note
-                    
-                    // Simple volume envelope: fade in and out
-                    gain.gain.setValueAtTime(0.5, now);  // START AT 50%
-                    gain.gain.exponentialRampToValueAtTime(0.1, now + 3.8);  // Fade to 10%
-                    
-                    osc.start(now);
-                    osc.stop(now + 4);
-                    
-                    console.log("🎵 BACKGROUND MUSIC PLAYING - 440 Hz at 50% volume");
+                    console.log("🎵 MAXIMUM LOUDNESS BACKGROUND CHORD PLAYING");
                 } catch (e) {
                     console.error("❌ Background music error:", e);
                 }
