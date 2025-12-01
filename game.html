@@ -490,7 +490,7 @@
                 if (!this.audioContext) {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 1.0;
+                    this.masterGain.gain.value = 0.8;  // 1.0 → 0.8 (все още громко, но не максимум)
                     this.masterGain.connect(this.audioContext.destination);
                 }
                 if (this.audioContext.state === "suspended") {
@@ -558,8 +558,8 @@
                     
                     osc.type = "sine";
                     osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.05, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 4);
+                    gain.gain.setValueAtTime(0.25, now);  // 0.05 → 0.25 (5x ГРОМЧЕ!)
+                    gain.gain.exponentialRampToValueAtTime(0.05, now + 4);
                     
                     osc.start(now);
                     osc.stop(now + 4);
