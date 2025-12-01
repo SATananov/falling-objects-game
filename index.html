@@ -346,7 +346,7 @@
                 y: -30,
                 emoji: emoji,
                 speed: speed,
-                size: 30,
+                size: 32,
                 alive: true
             };
         }
@@ -372,9 +372,14 @@
 
             // Spawn new objects
             const difficulty = 0.7 + game.level * 0.15;
-            const spawnRate = Math.max(0.1, 0.5 - game.level * 0.003);
+            const spawnRate = Math.max(0.05, 0.3 - game.level * 0.002);
             if (Math.random() < spawnRate) {
                 game.objects.push(createObject());
+            }
+            
+            // Limit max objects on screen
+            if (game.objects.length > 30) {
+                game.objects.splice(0, 5);
             }
 
             // Update player position
@@ -420,7 +425,7 @@
             drawBackground();
 
             // Draw objects
-            game.ctx.font = "40px Arial";
+            game.ctx.font = "32px Arial";
             game.ctx.textAlign = "center";
             game.ctx.textBaseline = "middle";
             game.objects.forEach(obj => {
