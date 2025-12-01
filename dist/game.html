@@ -490,7 +490,7 @@
                 if (!this.audioContext) {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 0.8;  // 1.0 → 0.8 (все още громко, но не максимум)
+                    this.masterGain.gain.value = 1.0;  // МАКСИМУМ звук
                     this.masterGain.connect(this.audioContext.destination);
                 }
                 if (this.audioContext.state === "suspended") {
@@ -543,12 +543,25 @@
             }
 
             playBackgroundMusic() {
-                // Play ambient background music using simple sine waves
+                // Play ambient background music - VERY LOUD background tone
                 if (!this.audioContext) return;
                 
                 const now = this.audioContext.currentTime;
-                const notes = [262, 330, 392, 523]; // C, E, G, C (chord)
                 
+                // Bass tone for background
+                const bassOsc = this.audioContext.createOscillator();
+                const bassGain = this.audioContext.createGain();
+                bassOsc.connect(bassGain);
+                bassGain.connect(this.masterGain);
+                bassOsc.type = "square";
+                bassOsc.frequency.value = 110; // Low bass
+                bassGain.gain.setValueAtTime(0.3, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.05, now + 4);
+                bassOsc.start(now);
+                bassOsc.stop(now + 4);
+                
+                // Melody notes - louder
+                const notes = [262, 330, 392, 523];
                 notes.forEach((freq, index) => {
                     const osc = this.audioContext.createOscillator();
                     const gain = this.audioContext.createGain();
@@ -556,9 +569,9 @@
                     osc.connect(gain);
                     gain.connect(this.masterGain);
                     
-                    osc.type = "sine";
+                    osc.type = "triangle";
                     osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.25, now);  // 0.05 → 0.25 (5x ГРОМЧЕ!)
+                    gain.gain.setValueAtTime(0.35, now);
                     gain.gain.exponentialRampToValueAtTime(0.05, now + 4);
                     
                     osc.start(now);
@@ -964,7 +977,10 @@
                 // Start background music loop
                 if (!this.musicLoopStarted) {
                     this.musicLoopStarted = true;
-                    this.playMusicLoop();
+                    // Play test sound to confirm audio works
+                    this.audioManager.playSound(800, 0.2, 0.5, "square");
+                    console.log("🔊 TEST SOUND PLAYED - Audio is working!");
+                    setTimeout(() => this.playMusicLoop(), 300);
                 }
                 
                 document.getElementById("status").textContent = `Status: RUNNING (Level ${this.currentLevelIndex + 1}/${this.levels.length})`;
