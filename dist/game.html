@@ -400,7 +400,6 @@
             color: #555;
         }
     </style>
-  <script type="module" crossorigin src="/falling-objects-game/assets/main-BncomGA4.js"></script>
 </head>
 <body>
     <div class="dedication">FOR DESSI and EVA</div>
@@ -457,8 +456,10 @@
     </div>
 
     <!-- Background Music Element -->
-    <audio id="background-music-element" loop style="display:none;"></audio>
-
+    <audio id="background-music-element" loop style="display:none;">
+        <source src="/falling-objects-game/public/music.mp3" type="audio/mpeg">
+        <source src="https://cdn.jsdelivr.net/gh/SATananov/falling-objects-game@main/public/music.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         // Utility functions
