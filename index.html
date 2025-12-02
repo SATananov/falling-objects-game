@@ -224,8 +224,8 @@
             SPAWN_INTERVAL_MIN: 0.12, // fastest spawn interval
             SPAWN_INTERVAL_DEC_PER_LEVEL: 0.015, // decrease per level
             // object speed tuning
-            OBJECT_BASE_SPEED: 40, // px/sec at level 0
-            OBJECT_SPEED_PER_LEVEL: 2.5 // added per level
+            OBJECT_BASE_SPEED: 80, // px/sec at level 0 (increased for faster start)
+            OBJECT_SPEED_PER_LEVEL: 3.5 // added per level (faster growth)
         };
 
         // ============ GAME STATE ============
@@ -595,11 +595,16 @@
         }
 
         game.canvas.addEventListener('pointerdown', e => {
-            pointerActive = true;
-            game.canvas.setPointerCapture && game.canvas.setPointerCapture(e.pointerId);
             const p = pointerToCanvasCoords(e);
-            game.player.x = p.x;
-            game.player.y = p.y;
+            const halfW = game.player.w / 2;
+            const halfH = game.player.h / 2;
+            // Activate dragging only when the pointer is on the player bar
+            if (p.x >= game.player.x - halfW && p.x <= game.player.x + halfW && p.y >= game.player.y - halfH && p.y <= game.player.y + halfH) {
+                pointerActive = true;
+                try { game.canvas.setPointerCapture && game.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+                game.player.x = p.x;
+                game.player.y = p.y;
+            }
         });
 
         window.addEventListener('pointerup', e => {
@@ -609,8 +614,8 @@
 
         game.canvas.addEventListener('pointermove', e => {
             const p = pointerToCanvasCoords(e);
-            // If dragging (pointer down) or it's a touch/pen, move both X and Y
-            if (pointerActive || e.pointerType === 'touch' || e.pointerType === 'pen') {
+            // If dragging (pointer down), move both X and Y
+            if (pointerActive) {
                 game.player.x = p.x;
                 game.player.y = p.y;
             } else {
