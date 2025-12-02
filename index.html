@@ -214,10 +214,18 @@
             CANVAS_HEIGHT: 500,
             LEVEL_DURATION: 25,
             MAX_LEVELS: 100,
-            PLAYER_WIDTH: 110,
-            PLAYER_HEIGHT: 18,
-            PLAYER_SPEED: 400,
-            PLAYER_Y: 460
+            // make player bar smaller as requested
+            PLAYER_WIDTH: 80,
+            PLAYER_HEIGHT: 14,
+            PLAYER_SPEED: 420,
+            PLAYER_Y: 460,
+            // spawning tuning: start easier (bigger interval) and get faster with level
+            SPAWN_INTERVAL_START: 1.5, // seconds between spawns at level 0
+            SPAWN_INTERVAL_MIN: 0.12, // fastest spawn interval
+            SPAWN_INTERVAL_DEC_PER_LEVEL: 0.015, // decrease per level
+            // object speed tuning
+            OBJECT_BASE_SPEED: 40, // px/sec at level 0
+            OBJECT_SPEED_PER_LEVEL: 2.5 // added per level
         };
 
         // ============ GAME STATE ============
@@ -240,6 +248,7 @@
             keys: {},
             musicMuted: false,
             audioContext: null,
+            spawnTimer: 0,
             lastFrameTime: 0,
             animationId: 0
         };
@@ -298,16 +307,16 @@
 
         // ============ CREATE FALLING OBJECT ============
         function createObject() {
-            const difficulty = 0.7 + game.level * 0.15;
-            const speed = 80 + difficulty * 120;
-            const x = random(40, config.CANVAS_WIDTH - 40);
+            // speed increases linearly with level for predictable difficulty
+            const speed = config.OBJECT_BASE_SPEED + game.level * config.OBJECT_SPEED_PER_LEVEL + random(-10, 10);
+            const x = random(24, config.CANVAS_WIDTH - 24);
 
             return {
                 x: x,
                 y: -40,
                 emoji: randomEmoji(game.level),
                 speed: speed,
-                size: 32
+                size: 28
             };
         }
 
@@ -328,10 +337,16 @@
                 }
             }
 
-            // Spawn objects - increase spawn frequency with level
-            const spawnRate = Math.min(0.6, 0.08 + game.level * 0.005); // probability per frame
-            if (Math.random() < spawnRate) {
-                game.objects.push(createObject());
+            // Spawn objects using a timer: start easy (long interval) and speed up with levels
+            game.spawnTimer += dt;
+            const spawnInterval = Math.max(config.SPAWN_INTERVAL_MIN, config.SPAWN_INTERVAL_START - game.level * config.SPAWN_INTERVAL_DEC_PER_LEVEL);
+            if (game.spawnTimer >= spawnInterval) {
+                // spawn count increases slowly with level
+                const spawnCount = Math.min(4, 1 + Math.floor(game.level / 25));
+                for (let s = 0; s < spawnCount; s++) {
+                    game.objects.push(createObject());
+                }
+                game.spawnTimer -= spawnInterval;
             }
 
             // Limit max objects on screen for performance
