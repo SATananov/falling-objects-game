@@ -584,18 +584,40 @@
             game.keys[e.key] = false;
         });
 
-        // Mouse/Touch controls
-        game.canvas.addEventListener("mousemove", e => {
+        // Pointer controls (mouse, touch, pen) - support dragging to move both X and Y
+        let pointerActive = false;
+
+        function pointerToCanvasCoords(e) {
             const rect = game.canvas.getBoundingClientRect();
-            game.player.x = (e.clientX - rect.left) * (config.CANVAS_WIDTH / rect.width);
+            const x = (e.clientX - rect.left) * (config.CANVAS_WIDTH / rect.width);
+            const y = (e.clientY - rect.top) * (config.CANVAS_HEIGHT / rect.height);
+            return { x, y };
+        }
+
+        game.canvas.addEventListener('pointerdown', e => {
+            pointerActive = true;
+            game.canvas.setPointerCapture && game.canvas.setPointerCapture(e.pointerId);
+            const p = pointerToCanvasCoords(e);
+            game.player.x = p.x;
+            game.player.y = p.y;
         });
 
-        game.canvas.addEventListener("touchmove", e => {
-            e.preventDefault();
-            const rect = game.canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            game.player.x = (touch.clientX - rect.left) * (config.CANVAS_WIDTH / rect.width);
+        window.addEventListener('pointerup', e => {
+            pointerActive = false;
+            try { game.canvas.releasePointerCapture && game.canvas.releasePointerCapture(e.pointerId); } catch (err) {}
         });
+
+        game.canvas.addEventListener('pointermove', e => {
+            const p = pointerToCanvasCoords(e);
+            // If dragging (pointer down) or it's a touch/pen, move both X and Y
+            if (pointerActive || e.pointerType === 'touch' || e.pointerType === 'pen') {
+                game.player.x = p.x;
+                game.player.y = p.y;
+            } else {
+                // hover with mouse - keep horizontal control as before
+                game.player.x = p.x;
+            }
+        }, { passive: true });
 
         // Initial draw
         drawBackground();
