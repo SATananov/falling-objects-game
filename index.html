@@ -313,29 +313,29 @@
         function update(dt) {
             game.time += dt;
 
-            // Check level complete
+            // Check level complete - advance regardless of remaining objects
             if (game.time >= config.LEVEL_DURATION) {
-                if (game.objects.length === 0) {
-                    game.level++;
-                    if (game.level >= config.MAX_LEVELS) {
-                        game.running = false;
-                        alert("🎉 ПОЗДРАВЛЕНИЯ! Завърши всички 100 нива! 🎉");
-                    } else {
-                        game.time = 0;
-                        game.objects = [];
-                    }
+                game.level++;
+                if (game.level >= config.MAX_LEVELS) {
+                    game.running = false;
+                    alert("🎉 ПОЗДРАВЛЕНИЯ! Завърши всички 100 нива! 🎉");
+                } else {
+                    // reset timer and clear objects for next level
+                    game.time = 0;
+                    game.objects = [];
                 }
             }
 
-            // Spawn objects
-            const spawnRate = Math.max(0.05, 0.3 - game.level * 0.002);
+            // Spawn objects - increase spawn frequency with level
+            const spawnRate = Math.min(0.6, 0.08 + game.level * 0.005); // probability per frame
             if (Math.random() < spawnRate) {
                 game.objects.push(createObject());
             }
 
-            // Limit max objects on screen
-            if (game.objects.length > 25) {
-                game.objects.splice(0, 5);
+            // Limit max objects on screen for performance
+            const MAX_OBJECTS = 30;
+            if (game.objects.length > MAX_OBJECTS) {
+                game.objects.splice(0, game.objects.length - MAX_OBJECTS);
             }
 
             // Update player
@@ -420,7 +420,7 @@
             // Update HUD
             document.getElementById("level").textContent = game.level + 1;
             document.getElementById("objects").textContent = game.objects.length;
-            document.getElementById("time").textContent = Math.floor(game.time);
+            document.getElementById("time").textContent = game.time.toFixed(1);
             document.getElementById("progress").style.width = ((game.time / config.LEVEL_DURATION) * 100) + "%";
 
             if (game.running) {
@@ -471,6 +471,8 @@
 
         // ============ CONTROLS ============
         document.getElementById("btnStart").addEventListener("click", () => {
+            // ensure clean start
+            if (game.animationId) cancelAnimationFrame(game.animationId);
             game.running = true;
             game.paused = false;
             game.level = 0;
@@ -478,12 +480,12 @@
             game.objects = [];
             game.lastFrameTime = 0;
             musicNoteIndex = 0;
-            
+
             if (!game.musicMuted) {
                 playBackgroundMusic();
             }
-            
-            gameLoop(performance.now());
+
+            game.animationId = requestAnimationFrame(gameLoop);
         });
 
         document.getElementById("btnPause").addEventListener("click", () => {
@@ -498,6 +500,8 @@
                 if (!game.musicMuted) {
                     playBackgroundMusic();
                 }
+                // resume loop if needed
+                if (!game.animationId) game.animationId = requestAnimationFrame(gameLoop);
             }
         });
 
