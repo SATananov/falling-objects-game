@@ -24,6 +24,7 @@
             padding: 30px;
             max-width: 900px;
             width: 100%;
+            position: relative; /* for overlaying the centered Continue button */
         }
 
         h1 {
@@ -103,6 +104,22 @@
             transform: translateY(-2px);
         }
 
+        /* Centered overlay Continue button (hidden by default) */
+        #btnContinue {
+            display: none;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            background: #2ecc71;
+            color: white;
+            padding: 14px 28px;
+            font-size: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -165,8 +182,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎮 FALLING OBJECTS GAME</h1>
-        <div class="subtitle">За Dessi и Eva | 100 Нива • Музика • 5 Теми • Емодзи</div>
+    <h1>🎮 FALLING OBJECTS GAME</h1>
+    <div class="subtitle">For DESSI And EVA</div>
 
         <canvas id="gameCanvas" width="800" height="500"></canvas>
     <audio id="bgMusic" src="music.mp3" loop crossorigin="anonymous"></audio>
@@ -177,6 +194,8 @@
             <button id="btnResume">▶️ RESUME</button>
             <button id="btnStop">⏹️ STOP</button>
             <button id="btnMusic">🔊 MUSIC: ON</button>
+            <button id="btnLang">🌐 BG</button>
+            <button id="btnContinue">➡️ CONTINUE</button>
         </div>
 
         <div class="stats">
@@ -198,12 +217,14 @@
                     <div class="progress-fill" id="progress"></div>
                 </div>
             </div>
+            <div class="stat">
+                <div class="stat-label">Животи</div>
+                <div class="stat-value" id="lives">0</div>
+            </div>
         </div>
 
         <div class="hint">
-            <strong>⌨️ Управление:</strong> ← → или A/D за движение<br>
-            <strong>🎯 Цел:</strong> Събери емодзи | Всяко ниво → по-трудно | Достигни ниво 100!<br>
-            <strong>🎵 Музика:</strong> Натисни MUSIC бутон | <strong>Време:</strong> 25 сек за ниво
+            Made By Tanashi/Stefano De Tanini Brand/
         </div>
     </div>
 
@@ -212,7 +233,7 @@
         const config = {
             CANVAS_WIDTH: 800,
             CANVAS_HEIGHT: 500,
-            LEVEL_DURATION: 25,
+            LEVEL_DURATION: 30,
             MAX_LEVELS: 100,
             // make player bar smaller as requested
             PLAYER_WIDTH: 80,
@@ -223,12 +244,35 @@
             SPAWN_INTERVAL_START: 1.5, // seconds between spawns at level 0
             SPAWN_INTERVAL_MIN: 0.12, // fastest spawn interval
             SPAWN_INTERVAL_DEC_PER_LEVEL: 0.015, // decrease per level
+            // spawn count tuning
+            BASE_SPAWN_COUNT: 1, // start smaller on first level
+            SPAWN_COUNT_PER_LEVEL: 2, // increase by 2 each level (smooth growth)
+                SPAWN_COUNT_MAX: 60, // hard cap to avoid runaway
+                // spawn growth mode: 'linear' | 'sqrt' | 'log' - sqrt gives slower growth at higher levels
+                SPAWN_GROWTH_MODE: 'sqrt',
+                // limit how many queued spawns are added to the world each frame to smooth CPU
+                MAX_SPAWN_PER_FRAME: 4,
+                // global maximum objects allowed on screen at once
+                MAX_OBJECTS: 300,
+                // Spawn composition: define how the mix of slow/normal/med/fast changes from level 0 to MAX_LEVELS
+                SPAWN_DISTRIBUTION_START: { slow: 0.25, normal: 0.60, med: 0.10, fast: 0.05 },
+                SPAWN_DISTRIBUTION_END:   { slow: 0.05, normal: 0.45, med: 0.25, fast: 0.25 },
+                // speed multiplier deltas per category — these are base factor ranges applied on top of base speed
+                SPEED_FACTORS: {
+                    slow:  { min: 0.55, max: 0.95 },
+                    normal:{ min: 0.95, max: 1.12 },
+                    med:   { min: 1.12, max: 1.45 },
+                    fast:  { min: 1.45, max: 2.3 }
+                },
             // object speed tuning
             OBJECT_BASE_SPEED: 80, // px/sec at level 0 (increased for faster start)
-            OBJECT_SPEED_PER_LEVEL: 3.5 // added per level (faster growth)
+            OBJECT_SPEED_PER_LEVEL: 4.2 // added per level (faster growth)
+            ,
+            // player lives (allow a few hits before GAME OVER so players can reach high levels)
+            START_LIVES: 3
         };
 
-        // ============ GAME STATE ============
+    // ============ GAME STATE ============
         const game = {
             canvas: document.getElementById("gameCanvas"),
             ctx: null,
@@ -247,8 +291,12 @@
             },
             keys: {},
             musicMuted: false,
+            lang: 'en', // default UI language (en). Toggle with btnLang.
             audioContext: null,
             spawnTimer: 0,
+                spawnQueue: [],
+            invulnerable: false,
+            lives: config.START_LIVES,
             lastFrameTime: 0,
             animationId: 0
         };
@@ -261,7 +309,9 @@
             { id: 1, name: "Day", bg1: "#9ad9ff", bg2: "#e9f7ff", emojis: ["🍎", "🍊", "🍋", "🍌", "🍉", "🍓", "🌻"] },
             { id: 2, name: "Factory", bg1: "#2b103e", bg2: "#7e3ff2", emojis: ["🔧", "🛠", "⚙", "🔩", "🪚", "🔨", "🪛"] },
             { id: 3, name: "Ocean", bg1: "#1a5f7a", bg2: "#0d4a63", emojis: ["🐠", "🐟", "🐡", "🦈", "🐙", "🦑", "🐚"] },
-            { id: 4, name: "Space", bg1: "#000011", bg2: "#0a0033", emojis: ["⭐", "🌟", "✨", "💫", "🔆", "🪐", "🛸"] }
+            { id: 4, name: "Space", bg1: "#000011", bg2: "#0a0033", emojis: ["⭐", "🌟", "✨", "💫", "🔆", "🪐", "🛸"] },
+            // Christmas theme used for holiday levels
+            { id: 5, name: "Christmas", bg1: "#0b2a12", bg2: "#5a1a19", emojis: ["🎄", "🎅", "⛄", "🦌", "🎁", "❄️", "🔔"] }
         ];
 
         // ============ UTILITIES ============
@@ -273,13 +323,42 @@
             return Math.floor(random(min, max + 1));
         }
 
+        // linear interpolation helper
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        // return spawn distribution weights (slow, normal, med, fast) interpolated by level
+        function getSpawnDistribution(level) {
+            const t = Math.min(1, Math.max(0, level / Math.max(1, config.MAX_LEVELS - 1)));
+            const s = config.SPAWN_DISTRIBUTION_START;
+            const e = config.SPAWN_DISTRIBUTION_END;
+            const slow = lerp(s.slow, e.slow, t);
+            const normal = lerp(s.normal, e.normal, t);
+            const med = lerp(s.med, e.med, t);
+            const fast = lerp(s.fast, e.fast, t);
+            const total = slow + normal + med + fast;
+            return { slow: slow / total, normal: normal / total, med: med / total, fast: fast / total };
+        }
+
         function getTheme(level) {
-            return themes[level % themes.length];
+                    // Make the game use a Christmas theme for a block of levels (10..29)
+                    // so later levels can feel seasonal. Adjust ranges as desired.
+                    if (level >= 10 && level <= 29) {
+                        const c = themes.find(t => t.name === "Christmas");
+                        if (c) return c;
+                    }
+                    return themes[level % themes.length];
         }
 
         function randomEmoji(level) {
             const theme = getTheme(level);
             return theme.emojis[randomInt(0, theme.emojis.length - 1)];
+        }
+
+        // Level duration grows by +5 seconds each next level
+        function getLevelDuration(level) {
+            return config.LEVEL_DURATION + (level * 5);
         }
 
         // ============ BACKGROUND ============
@@ -303,20 +382,58 @@
                     game.ctx.fill();
                 }
             }
+
+            // Simple snow for Christmas theme (lightweight, decorative)
+            if (theme.name === 'Christmas') {
+                game.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                // draw a handful of small snow dots each frame (cheap and pretty)
+                for (let s = 0; s < 60; s++) {
+                    const sx = (Math.sin((s + game.time) * 1.1) * 100 + s * 23) % config.CANVAS_WIDTH;
+                    const sy = (Math.abs(Math.cos((s * 1.3) + game.time * 0.6)) * config.CANVAS_HEIGHT * 0.9) % config.CANVAS_HEIGHT;
+                    const r = 1 + (s % 3) * 0.6;
+                    game.ctx.beginPath();
+                    game.ctx.arc(sx, sy, r, 0, Math.PI * 2);
+                    game.ctx.fill();
+                }
+            }
         }
 
         // ============ CREATE FALLING OBJECT ============
         function createObject() {
-            // speed increases linearly with level for predictable difficulty
-            const speed = config.OBJECT_BASE_SPEED + game.level * config.OBJECT_SPEED_PER_LEVEL + random(-10, 10);
+            // speed increases with level; use spawn distribution per level to pick category
+            const baseSpeed = config.OBJECT_BASE_SPEED + game.level * config.OBJECT_SPEED_PER_LEVEL;
+            const dist = getSpawnDistribution(game.level);
+            // weighted random pick
+            const r = Math.random();
+            let category;
+            if (r < dist.slow) category = 'slow';
+            else if (r < dist.slow + dist.normal) category = 'normal';
+            else if (r < dist.slow + dist.normal + dist.med) category = 'med';
+            else category = 'fast';
+
+            // get speed factor range and slightly scale upper ranges with progression (so very high levels feel faster)
+            const t = Math.min(1, game.level / Math.max(1, config.MAX_LEVELS - 1));
+            const sf = config.SPEED_FACTORS[category];
+            // scale fast upper bound with progression to make late-game more intense
+            const minF = sf.min;
+            const maxF = sf.max + (category === 'fast' ? 0.4 * t : 0.15 * t);
+            const factor = random(minF, maxF);
+
+            const speed = baseSpeed * factor + random(-6, 6);
             const x = random(24, config.CANVAS_WIDTH - 24);
+            const emoji = randomEmoji(game.level);
+
+            // slightly larger icons for Christmas-themed items so they stand out
+            const christmasSet = new Set(["🎄", "🎅", "⛄", "🦌", "🎁", "❄️", "🔔"]);
+            const size = christmasSet.has(emoji) ? 40 : 28;
 
             return {
                 x: x,
                 y: -40,
-                emoji: randomEmoji(game.level),
+                emoji: emoji,
                 speed: speed,
-                size: 28
+                size: size,
+                speedFactor: factor
             };
         }
 
@@ -325,34 +442,74 @@
             game.time += dt;
 
             // Check level complete - advance regardless of remaining objects
-            if (game.time >= config.LEVEL_DURATION) {
-                game.level++;
-                if (game.level >= config.MAX_LEVELS) {
-                    game.running = false;
-                    alert("🎉 ПОЗДРАВЛЕНИЯ! Завърши всички 100 нива! 🎉");
-                } else {
-                    // reset timer and clear objects for next level
-                    game.time = 0;
-                    game.objects = [];
+            const currentLevelDuration = getLevelDuration(game.level);
+                if (game.time >= currentLevelDuration) {
+                    // If completing the final level (100), show a victory message and stop.
+                    // Use game.level as 0-based index; when current level index + 1 === MAX_LEVELS the player finished the last level.
+                    if (game.level + 1 >= config.MAX_LEVELS) {
+                        game.running = false;
+                        // localized victory message (BG requested: "Ти Победи")
+                        const vmsg = (i18n && i18n[game.lang] && i18n[game.lang].victory) ? i18n[game.lang].victory : 'You Win!';
+                        game.statusMessage = vmsg;
+                        // stop background music and play celebratory tone
+                        try { document.getElementById('bgMusic').pause(); document.getElementById('bgMusic').currentTime = 0; } catch(e) {}
+                        playSound(880, 600, 0.14);
+                    } else {
+                        // advance to next level and show fireworks overlay
+                        game.level++;
+                        // enter level-up state: pause game and start fireworks for 5s
+                        startLevelUp();
+                    }
                 }
-            }
 
-            // Spawn objects using a timer: start easy (long interval) and speed up with levels
+            // Spawn objects using a timer: start easier (long interval) and speed up with levels
             game.spawnTimer += dt;
             const spawnInterval = Math.max(config.SPAWN_INTERVAL_MIN, config.SPAWN_INTERVAL_START - game.level * config.SPAWN_INTERVAL_DEC_PER_LEVEL);
             if (game.spawnTimer >= spawnInterval) {
-                // spawn count increases slowly with level
-                const spawnCount = Math.min(4, 1 + Math.floor(game.level / 25));
+                // compute spawn count using configured growth mode to avoid linear runaway
+                let spawnCount;
+                if (config.SPAWN_GROWTH_MODE === 'linear') {
+                    spawnCount = config.BASE_SPAWN_COUNT + game.level * config.SPAWN_COUNT_PER_LEVEL;
+                } else if (config.SPAWN_GROWTH_MODE === 'log') {
+                    spawnCount = config.BASE_SPAWN_COUNT + Math.floor(config.SPAWN_COUNT_PER_LEVEL * Math.log1p(game.level));
+                } else { // default 'sqrt'
+                    spawnCount = config.BASE_SPAWN_COUNT + Math.floor(config.SPAWN_COUNT_PER_LEVEL * Math.sqrt(game.level));
+                }
+                spawnCount = Math.min(spawnCount, config.SPAWN_COUNT_MAX);
+
+                // Instead of adding all objects at once (which can spike CPU), push to a spawnQueue
                 for (let s = 0; s < spawnCount; s++) {
-                    game.objects.push(createObject());
+                    game.spawnQueue.push(createObject());
                 }
                 game.spawnTimer -= spawnInterval;
             }
 
-            // Limit max objects on screen for performance
-            const MAX_OBJECTS = 30;
-            if (game.objects.length > MAX_OBJECTS) {
-                game.objects.splice(0, game.objects.length - MAX_OBJECTS);
+            // Add a limited number of queued spawns to the world each frame to smooth CPU and avoid huge instantaneous spikes
+            const canAdd = Math.max(0, config.MAX_OBJECTS - game.objects.length);
+            const toAdd = Math.min(game.spawnQueue.length, config.MAX_SPAWN_PER_FRAME, canAdd);
+            for (let i = 0; i < toAdd; i++) {
+                const obj = game.spawnQueue.shift();
+                if (!obj) break;
+                // If we're in an invulnerability window (just started a level), avoid spawning objects
+                // directly above the player — shift them horizontally to a safe side so they don't
+                // cause an immediate collision.
+                if (game.invulnerable) {
+                    const safeMargin = game.player.w / 2 + 12;
+                    if (Math.abs(obj.x - game.player.x) < safeMargin) {
+                        // try to move spawn to the right if there's space, otherwise to the left
+                        if (game.player.x + safeMargin + 24 < config.CANVAS_WIDTH) {
+                            obj.x = Math.min(config.CANVAS_WIDTH - 24, game.player.x + safeMargin + 24);
+                        } else {
+                            obj.x = Math.max(24, game.player.x - safeMargin - 24);
+                        }
+                    }
+                }
+                game.objects.push(obj);
+            }
+
+            // Limit max objects on screen for performance using config.MAX_OBJECTS
+            if (game.objects.length > config.MAX_OBJECTS) {
+                game.objects.splice(0, game.objects.length - config.MAX_OBJECTS);
             }
 
             // Update player
@@ -384,14 +541,32 @@
                     obj.y < game.player.y + game.player.h &&
                     obj.x > game.player.x - game.player.w / 2 &&
                     obj.x < game.player.x + game.player.w / 2) {
-                    // Collision with player -> GAME OVER
-                    game.running = false;
-                    game.statusMessage = "GAME OVER";
-                    // stop background music if playing
-                    try { document.getElementById('bgMusic').pause(); document.getElementById('bgMusic').currentTime = 0; } catch(e) {}
-                    // play a short low buzz
-                    playSound(120, 300, 0.25);
-                    break;
+                        // Collision with player -> GAME OVER (unless invulnerable for a short period right after level start)
+                        if (!game.invulnerable) {
+                            // Log collision info for debugging
+                            try { console.warn('Collision at level', game.level + 1, 'obj', { x: obj.x, y: obj.y, speed: obj.speed, size: obj.size }, 'player', { x: game.player.x, y: game.player.y }); } catch (e) {}
+                            // decrement lives and only end game when lives reach zero
+                            game.lives = Math.max(0, (game.lives || 0) - 1);
+                            // remove the colliding object
+                            game.objects.splice(i, 1);
+                            if (game.lives <= 0) {
+                                game.running = false;
+                                game.statusMessage = "GAME OVER";
+                                // stop background music if playing
+                                try { document.getElementById('bgMusic').pause(); document.getElementById('bgMusic').currentTime = 0; } catch(e) {}
+                                // play a short low buzz
+                                playSound(120, 300, 0.25);
+                                break;
+                            } else {
+                                // give a short invulnerability after a hit so the player can recover
+                                game.invulnerable = true;
+                                setTimeout(() => { game.invulnerable = false; }, 1800);
+                                // play a 'hit' sound
+                                playSound(220, 120, 0.10);
+                                // continue processing remaining objects
+                                continue;
+                            }
+                        }
                 } else if (obj.y > config.CANVAS_HEIGHT) {
                     game.objects.splice(i, 1);
                 }
@@ -401,6 +576,37 @@
         // ============ DRAW ============
         function draw() {
             drawBackground();
+
+            // Update & draw fireworks (draw always if particles exist so they remain visible as a reward)
+            if (fireworks.length > 0) {
+                for (let i = fireworks.length - 1; i >= 0; i--) {
+                    const p = fireworks[i];
+                    // frame dt approx 1/60 for stable motion
+                    const dt = 1/60;
+                    p.age += dt;
+                    // gravity
+                    p.vy += 140 * dt;
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    const lifeRatio = 1 - (p.age / p.life);
+                    if (lifeRatio <= 0) {
+                        fireworks.splice(i, 1);
+                        continue;
+                    }
+                    game.ctx.globalAlpha = Math.max(0, lifeRatio);
+                    game.ctx.fillStyle = p.color;
+                    // draw glow circle for larger particles
+                    if (p.size > 2.4) {
+                        game.ctx.beginPath();
+                        game.ctx.arc(p.x, p.y, p.size * 1.8, 0, Math.PI * 2);
+                        game.ctx.fill();
+                    }
+                    game.ctx.beginPath();
+                    game.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    game.ctx.fill();
+                }
+                game.ctx.globalAlpha = 1;
+            }
 
             // Draw objects
             game.ctx.font = "32px Arial";
@@ -438,7 +644,58 @@
                 game.ctx.fillText(game.statusMessage, config.CANVAS_WIDTH / 2, config.CANVAS_HEIGHT / 2 - 20);
 
                 game.ctx.font = '20px Arial';
-                game.ctx.fillText('Натисни START за игра отначало', config.CANVAS_WIDTH / 2, config.CANVAS_HEIGHT / 2 + 30);
+                // localized game over helper
+                const overLang = game.lang || 'en';
+                const overUi = (typeof i18n !== 'undefined') ? i18n[overLang] : null;
+                if (overUi) {
+                    game.ctx.fillText(overUi.gameOverText, config.CANVAS_WIDTH / 2, config.CANVAS_HEIGHT / 2 + 30);
+                } else {
+                    game.ctx.fillText('Press START to play again', config.CANVAS_WIDTH / 2, config.CANVAS_HEIGHT / 2 + 30);
+                }
+            }
+            // Level-up fireworks overlay
+            if (game.showLevelUp) {
+                // dim background
+                game.ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                game.ctx.fillRect(0, 0, config.CANVAS_WIDTH, config.CANVAS_HEIGHT);
+
+                // update and draw fireworks particles
+                for (let i = fireworks.length - 1; i >= 0; i--) {
+                    const p = fireworks[i];
+                    p.age += 1/60;
+                    // simple physics
+                    p.vy += 120 * (1/60); // gravity, px/s^2
+                    p.x += p.vx * (1/60);
+                    p.y += p.vy * (1/60);
+                    const lifeRatio = 1 - (p.age / p.life);
+                    if (lifeRatio <= 0) {
+                        fireworks.splice(i, 1);
+                        continue;
+                    }
+                    game.ctx.globalAlpha = Math.max(0, lifeRatio);
+                    game.ctx.fillStyle = p.color;
+                    game.ctx.beginPath();
+                    game.ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+                    game.ctx.fill();
+                }
+                game.ctx.globalAlpha = 1;
+
+                    // draw level up text (localized)
+                    const lang = game.lang || 'en';
+                    const ui = (typeof i18n !== 'undefined') ? i18n[lang] : null;
+                    game.ctx.fillStyle = '#fff';
+                    game.ctx.textAlign = 'center';
+                    game.ctx.textBaseline = 'middle';
+                    game.ctx.font = '36px Arial';
+                    if (ui) {
+                        game.ctx.fillText(ui.levelLabel + ' ' + (game.level + 1) + ui.levelUpSuccess, config.CANVAS_WIDTH / 2, 80);
+                        game.ctx.font = '20px Arial';
+                        game.ctx.fillText(ui.levelUpText, config.CANVAS_WIDTH / 2, 110);
+                    } else {
+                        game.ctx.fillText('Level ' + (game.level + 1) + ' - Success!', config.CANVAS_WIDTH / 2, 80);
+                        game.ctx.font = '20px Arial';
+                        game.ctx.fillText('Press CONTINUE to proceed', config.CANVAS_WIDTH / 2, 110);
+                    }
             }
         }
 
@@ -458,7 +715,11 @@
             document.getElementById("level").textContent = game.level + 1;
             document.getElementById("objects").textContent = game.objects.length;
             document.getElementById("time").textContent = game.time.toFixed(1);
-            document.getElementById("progress").style.width = ((game.time / config.LEVEL_DURATION) * 100) + "%";
+            // show lives if element exists
+            const livesEl = document.getElementById('lives');
+            if (livesEl) livesEl.textContent = (typeof game.lives !== 'undefined') ? String(game.lives) : '0';
+            // progress bar uses the current level's duration
+            document.getElementById("progress").style.width = ((game.time / getLevelDuration(game.level)) * 100) + "%";
 
             if (game.running) {
                 game.animationId = requestAnimationFrame(gameLoop);
@@ -494,6 +755,175 @@
         // Background music: external file `music.mp3` loaded into audio element
         const bgAudio = document.getElementById('bgMusic');
 
+        // Level-up / fireworks state
+        let fireworks = [];
+        let levelUpTimer = null;
+        let levelUpTimeout = null;
+
+        // Localization strings
+        const i18n = {
+            en: {
+                start: '▶️ START',
+                pause: '⏸️ PAUSE',
+                resume: '▶️ RESUME',
+                stop: '⏹️ STOP',
+                musicOn: '🔊 MUSIC: ON',
+                musicOff: '🔇 MUSIC: OFF',
+                continue: '➡️ CONTINUE',
+                hintLines: [
+                    '← → or A/D to move',
+                    'Goal: Collect emojis | Each level → harder | Reach level 100!',
+                    'Music: Press MUSIC button | Time: 30s for first level, +5s each next'
+                ],
+                levelUpText: 'Press CONTINUE to proceed',
+                levelLabel: 'Level',
+                objectsLabel: 'Objects',
+                timeLabel: 'Time',
+                progressLabel: 'Progress',
+                levelUpSuccess: ' - Success!',
+                gameOverText: 'Press START to play again'
+                ,
+                victory: 'You Win!',
+                victorySub: 'Press START to play again'
+                ,
+                livesLabel: 'Lives'
+            },
+            bg: {
+                start: '▶️ СТАРТ',
+                pause: '⏸️ ПАУЗА',
+                resume: '▶️ ПРОДЪЛЖИ',
+                stop: '⏹️ СПРЕЙ',
+                musicOn: '🔊 МУЗИКА: ВКЛ',
+                musicOff: '🔇 МУЗИКА: ИЗКЛ',
+                continue: '➡️ ПРОДЪЛЖИ',
+                hintLines: [
+                    '← → или A/D за движение',
+                    'Цел: Събери емодзи | Всяко ниво → по-трудно | Достигни ниво 100!',
+                    'Музика: Натисни MUSIC бутон | Време: 30 сек за първо ниво, +5s за всяко следващо'
+                ],
+                levelUpText: 'Натисни ПРОДЪЛЖИ за следващо ниво',
+                levelLabel: 'Ниво',
+                objectsLabel: 'Обекти',
+                timeLabel: 'Време',
+                progressLabel: 'Прогрес',
+                levelUpSuccess: ' - Успех!',
+                gameOverText: 'Натисни START за игра отначало'
+                ,
+                victory: 'Ти Победи',
+                victorySub: 'Натисни START за игра отначало'
+                ,
+                livesLabel: 'Животи'
+            }
+        };
+
+        function spawnFireworkBurst(cx, cy) {
+            const colors = ['#ff4d4d', '#ffd24d', '#4dffae', '#4dd0ff', '#b84dff', '#ffffff', '#ff88ff'];
+            // core burst
+            const coreCount = 18 + Math.floor(Math.random() * 24);
+            for (let i = 0; i < coreCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 60 + Math.random() * 260;
+                fireworks.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed * 0.8 - (20 + Math.random() * 40),
+                    life: 1.2 + Math.random() * 1.8,
+                    age: 0,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: 2 + Math.random() * 3
+                });
+            }
+            // sparkles that fall down
+            const sparkCount = 24 + Math.floor(Math.random() * 36);
+            for (let i = 0; i < sparkCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 20 + Math.random() * 120;
+                fireworks.push({
+                    x: cx + (Math.random() - 0.5) * 30,
+                    y: cy + (Math.random() - 0.5) * 10,
+                    vx: Math.cos(angle) * speed * 0.4,
+                    vy: Math.sin(angle) * speed * 0.6 + 10,
+                    life: 1.8 + Math.random() * 1.6,
+                    age: 0,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: 1 + Math.random() * 2
+                });
+            }
+        }
+
+        function startLevelUp() {
+            // pause gameplay and show overlay
+            game.running = false;
+            game.showLevelUp = true;
+            // clear existing active objects and queued spawns so the next level starts clean
+            game.objects = [];
+            game.spawnQueue = [];
+            // delay the first spawn slightly to avoid immediate pressure
+            game.spawnTimer = -config.SPAWN_INTERVAL_START;
+            game.time = 0;
+            // play a celebratory sound
+            playSound(880, 300, 0.12);
+            // show continue button (centered overlay)
+            const btn = document.getElementById('btnContinue');
+            if (btn) {
+                btn.style.display = 'block';
+                // set localized label
+                btn.textContent = i18n[game.lang].continue;
+            }
+
+            // spawn bursts periodically for 4 seconds and auto-end after 4s
+            const start = performance.now();
+            if (levelUpTimer) clearInterval(levelUpTimer);
+            if (levelUpTimeout) { clearTimeout(levelUpTimeout); levelUpTimeout = null; }
+            levelUpTimer = setInterval(() => {
+                // random positions
+                const cx = random(100, config.CANVAS_WIDTH - 100);
+                const cy = random(80, config.CANVAS_HEIGHT / 2);
+                spawnFireworkBurst(cx, cy);
+            }, 350);
+            // after 4 seconds, stop bursts and auto-resume (if player didn't press continue)
+            levelUpTimeout = setTimeout(() => {
+                if (levelUpTimer) { clearInterval(levelUpTimer); levelUpTimer = null; }
+                levelUpTimeout = null;
+                endLevelUp();
+            }, 4000);
+        }
+
+        function endLevelUp() {
+            game.showLevelUp = false;
+            const btn = document.getElementById('btnContinue');
+            if (btn) btn.style.display = 'none';
+            // clear any pending timers
+            if (levelUpTimer) { clearInterval(levelUpTimer); levelUpTimer = null; }
+            if (levelUpTimeout) { clearTimeout(levelUpTimeout); levelUpTimeout = null; }
+            // resume gameplay
+            // give a longer invulnerability window at the start of the level to avoid instant collisions
+            game.invulnerable = true;
+            // longer safety window (3s) to avoid immediate collisions after level transitions
+            setTimeout(() => { game.invulnerable = false; }, 3000);
+
+            // center player to a safe start position so they are not under a spawn point
+            game.player.x = config.CANVAS_WIDTH / 2;
+            game.player.y = config.PLAYER_Y;
+
+            // As an extra safety measure, remove any lingering objects that somehow are
+            // dangerously close to the player right when the level begins.
+            game.objects = game.objects.filter(o => {
+                const dx = Math.abs(o.x - game.player.x);
+                const dy = Math.abs(o.y - game.player.y);
+                // keep objects that are not inside the player's immediate hit zone
+                return !(dx < (game.player.w * 0.75) && dy < (game.player.h * 3));
+            });
+
+            game.running = true;
+            game.lastFrameTime = 0;
+            // delay the first spawn a bit (longer than one interval) so the player can reposition safely
+            game.spawnTimer = -config.SPAWN_INTERVAL_START * 1.5;
+            if (!game.musicMuted) startBgAudio();
+            game.animationId = requestAnimationFrame(gameLoop);
+        }
+
         function startBgAudio() {
             if (!bgAudio) return;
             try {
@@ -520,6 +950,13 @@
             game.level = 0;
             game.time = 0;
             game.objects = [];
+            game.spawnQueue = [];
+            game.spawnTimer = -config.SPAWN_INTERVAL_START;
+            game.invulnerable = true;
+            // reset player lives on fresh start
+            game.lives = config.START_LIVES;
+            // Give the player a safer buffer at the start of the game
+            setTimeout(() => { game.invulnerable = false; }, 1500);
             game.lastFrameTime = 0;
             game.statusMessage = "";
 
@@ -555,6 +992,8 @@
             game.objects = [];
             game.level = 0;
             game.time = 0;
+            // reset lives when stopping
+            game.lives = config.START_LIVES;
             game.lastFrameTime = 0;
             stopBgAudio();
             game.statusMessage = "";
@@ -565,15 +1004,65 @@
         document.getElementById("btnMusic").addEventListener("click", function() {
             game.musicMuted = !game.musicMuted;
             if (game.musicMuted) {
-                this.textContent = "🔇 MUSIC: OFF";
+                this.textContent = i18n[game.lang].musicOff;
                 pauseBgAudio();
             } else {
-                this.textContent = "🔊 MUSIC: ON";
+                this.textContent = i18n[game.lang].musicOn;
                 if (game.running) {
                     startBgAudio();
                 }
             }
         });
+
+        // Language toggle button
+        document.getElementById('btnLang').addEventListener('click', function() {
+            // toggle between 'en' and 'bg'
+            game.lang = (game.lang === 'en') ? 'bg' : 'en';
+            // update button label (show target language code)
+            this.textContent = (game.lang === 'en') ? '🌐 BG' : '🌐 EN';
+            updateUIStrings();
+        });
+
+        // Continue button for level-up overlay
+        document.getElementById('btnContinue').addEventListener('click', () => {
+            // End the level-up and resume the game
+            if (levelUpTimer) { clearInterval(levelUpTimer); levelUpTimer = null; }
+            if (levelUpTimeout) { clearTimeout(levelUpTimeout); levelUpTimeout = null; }
+            endLevelUp();
+        });
+
+        // Update UI strings based on current language
+        function updateUIStrings() {
+            const lang = game.lang;
+            const ui = i18n[lang];
+            document.getElementById('btnStart').textContent = ui.start;
+            document.getElementById('btnPause').textContent = ui.pause;
+            document.getElementById('btnResume').textContent = ui.resume;
+            document.getElementById('btnStop').textContent = ui.stop;
+            // music button state
+            document.getElementById('btnMusic').textContent = game.musicMuted ? ui.musicOff : ui.musicOn;
+            // continue button
+            const btnC = document.getElementById('btnContinue');
+            if (btnC) btnC.textContent = ui.continue;
+            // hint is replaced by Made By string per user request; keep it constant
+            const hintDiv = document.querySelector('.hint');
+            if (hintDiv) {
+                hintDiv.innerHTML = 'Made By Tanashi/Stefano De Tanini Brand/';
+            }
+            // subtitle/hint already set to Made By; keep it unchanged
+            // update stat labels
+            const statLabels = document.querySelectorAll('.stat-label');
+            if (statLabels && statLabels.length >= 4) {
+                statLabels[0].textContent = ui.levelLabel;
+                statLabels[1].textContent = ui.objectsLabel;
+                statLabels[2].textContent = ui.timeLabel;
+                statLabels[3].textContent = ui.progressLabel;
+                if (statLabels.length >= 5) statLabels[4].textContent = ui.livesLabel || 'Lives';
+            }
+        }
+
+        // initialize UI strings
+        updateUIStrings();
 
         // Keyboard controls
         window.addEventListener("keydown", e => {
@@ -614,14 +1103,12 @@
 
         game.canvas.addEventListener('pointermove', e => {
             const p = pointerToCanvasCoords(e);
-            // If dragging (pointer down), move both X and Y
+            // Move the player only while dragging (pointer is down on the bar)
             if (pointerActive) {
                 game.player.x = p.x;
                 game.player.y = p.y;
-            } else {
-                // hover with mouse - keep horizontal control as before
-                game.player.x = p.x;
             }
+            // When not dragging, do not move the player (no hover-to-move)
         }, { passive: true });
 
         // Initial draw
