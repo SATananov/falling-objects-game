@@ -169,6 +169,7 @@
         <div class="subtitle">За Dessi и Eva | 100 Нива • Музика • 5 Теми • Емодзи</div>
 
         <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <audio id="bgMusic" src="music.mp3" loop crossorigin="anonymous"></audio>
 
         <div class="controls">
             <button id="btnStart">▶️ START</button>
@@ -225,6 +226,7 @@
             ctx: null,
             running: false,
             paused: false,
+            statusMessage: "",
             level: 0,
             time: 0,
             objects: [],
@@ -367,8 +369,14 @@
                     obj.y < game.player.y + game.player.h &&
                     obj.x > game.player.x - game.player.w / 2 &&
                     obj.x < game.player.x + game.player.w / 2) {
-                    game.objects.splice(i, 1);
-                    playSound(800, 100, 0.2);
+                    // Collision with player -> GAME OVER
+                    game.running = false;
+                    game.statusMessage = "GAME OVER";
+                    // stop background music if playing
+                    try { document.getElementById('bgMusic').pause(); document.getElementById('bgMusic').currentTime = 0; } catch(e) {}
+                    // play a short low buzz
+                    playSound(120, 300, 0.25);
+                    break;
                 } else if (obj.y > config.CANVAS_HEIGHT) {
                     game.objects.splice(i, 1);
                 }
@@ -403,6 +411,20 @@
                 game.player.w,
                 game.player.h
             );
+            // If there is a status message (e.g., GAME OVER), draw overlay
+            if (game.statusMessage) {
+                game.ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                game.ctx.fillRect(0, 0, config.CANVAS_WIDTH, config.CANVAS_HEIGHT);
+
+                game.ctx.fillStyle = '#fff';
+                game.ctx.textAlign = 'center';
+                game.ctx.textBaseline = 'middle';
+                game.ctx.font = '64px Arial';
+                game.ctx.fillText(game.statusMessage, config.CANVAS_WIDTH / 2, config.CANVAS_HEIGHT / 2 - 20);
+
+                game.ctx.font = '20px Arial';
+                game.ctx.fillText('Натисни START за игра отначало', config.CANVAS_WIDTH / 2, config.CANVAS_HEIGHT / 2 + 30);
+            }
         }
 
         // ============ GAME LOOP ============
@@ -454,19 +476,24 @@
             } catch (e) {}
         }
 
-        let musicNoteIndex = 0;
-        function playBackgroundMusic() {
-            if (!game.musicMuted && game.running) {
-                const melody = [440, 330, 220, 330];
-                playSound(melody[musicNoteIndex % melody.length], 400, 0.08);
-                musicNoteIndex++;
-                
-                setTimeout(() => {
-                    if (game.running && !game.musicMuted) {
-                        playBackgroundMusic();
-                    }
-                }, 500);
-            }
+        // Background music: external file `music.mp3` loaded into audio element
+        const bgAudio = document.getElementById('bgMusic');
+
+        function startBgAudio() {
+            if (!bgAudio) return;
+            try {
+                bgAudio.volume = 0.9;
+                const p = bgAudio.play();
+                if (p && p.catch) p.catch(e => console.warn('bgAudio play blocked', e));
+            } catch (e) {}
+        }
+
+        function pauseBgAudio() {
+            try { if (bgAudio) bgAudio.pause(); } catch (e) {}
+        }
+
+        function stopBgAudio() {
+            try { if (bgAudio) { bgAudio.pause(); bgAudio.currentTime = 0; } } catch (e) {}
         }
 
         // ============ CONTROLS ============
@@ -479,10 +506,10 @@
             game.time = 0;
             game.objects = [];
             game.lastFrameTime = 0;
-            musicNoteIndex = 0;
+            game.statusMessage = "";
 
             if (!game.musicMuted) {
-                playBackgroundMusic();
+                startBgAudio();
             }
 
             game.animationId = requestAnimationFrame(gameLoop);
@@ -491,6 +518,7 @@
         document.getElementById("btnPause").addEventListener("click", () => {
             if (game.running) {
                 game.paused = true;
+                pauseBgAudio();
             }
         });
 
@@ -498,7 +526,7 @@
             if (game.paused) {
                 game.paused = false;
                 if (!game.musicMuted) {
-                    playBackgroundMusic();
+                    startBgAudio();
                 }
                 // resume loop if needed
                 if (!game.animationId) game.animationId = requestAnimationFrame(gameLoop);
@@ -513,6 +541,8 @@
             game.level = 0;
             game.time = 0;
             game.lastFrameTime = 0;
+            stopBgAudio();
+            game.statusMessage = "";
             game.ctx.clearRect(0, 0, config.CANVAS_WIDTH, config.CANVAS_HEIGHT);
             drawBackground();
         });
@@ -521,10 +551,11 @@
             game.musicMuted = !game.musicMuted;
             if (game.musicMuted) {
                 this.textContent = "🔇 MUSIC: OFF";
+                pauseBgAudio();
             } else {
                 this.textContent = "🔊 MUSIC: ON";
                 if (game.running) {
-                    playBackgroundMusic();
+                    startBgAudio();
                 }
             }
         });
